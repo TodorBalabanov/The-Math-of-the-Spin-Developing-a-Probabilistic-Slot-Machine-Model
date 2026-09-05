@@ -1,0 +1,167 @@
+\documentclass[12pt,twoside,openany]{book}
+
+\usepackage{xurl}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[none]{hyphenat}
+
+\usepackage[
+    paperwidth=5.5in,
+    paperheight=8.5in,
+    inner=0.75in,
+    outer=0.5in,
+    top=0.75in,
+    bottom=0.75in,
+    includeheadfoot
+]{geometry}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{ebgaramond}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\small\leftmark}
+\fancyhead[LO]{\small The Math of the Spin}
+\renewcommand{\headrulewidth}{0.1pt}
+\fancyfoot[LE,RO]{}
+\fancyfoot[RE]{\small Balabanov T. et al. $\scriptstyle\blacklozenge$ 2026 \copyright}
+\fancyfoot[LO]{\small Velbazhd Software LLC $\scriptstyle\blacklozenge$ Sofia $\scriptstyle\blacklozenge$ Bulgaria}
+\renewcommand{\footrulewidth}{0.1pt}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+\lstset{
+    basicstyle=\ttfamily\tiny,
+    keywordstyle=\color{blue},
+    backgroundcolor=\color{gray!10},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    frame=single
+}
+
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\chaptername}{}
+
+\lstset{
+    basicstyle=\ttfamily\tiny,
+    keywordstyle=\color{blue},
+    backgroundcolor=\color{gray!10},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    frame=single
+}
+
+\begin{document}
+
+\sloppy
+
+\frontmatter
+
+\thispagestyle{empty}
+\begin{center} \vspace*{2in} \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic Slot Machine Model}\\ \vspace*{0.25in} \Large\textit{} \end{center}
+\clearpage
+
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{1in}
+    \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic Slot Machine Model} \\
+    \vspace*{0.25in} \Large\textit{} \\
+    \vfill
+    \large Todor Balabanov, Nikita Moshenskiy,\\ Denis Tsvetanov, Vladislav Saykov,\\ Radoslav Batalski \\
+    \vspace*{0.25in} \small Kindle Direct Publishing
+\end{center}
+\clearpage
+
+\thispagestyle{empty}
+\vspace*{0.5in}
+The Math of the Spin:
+
+Developing a Probabilistic Slot Machine Model
+
+\vspace*{0.1in}
+by \hspace*{0.5in} Todor Balabanov\\ 
+\hspace*{0.95in} Nikita Moshenskiy\\ 
+\hspace*{0.95in} Denis Tsvetanov\\ 
+\hspace*{0.95in} Vladislav Saykov\\ 
+\hspace*{0.95in} Radoslav Batalski
+
+\vspace*{0.25in}
+Kindle Direct Publishing
+
+\vspace*{0.25in}
+Velbazhd Software LLC
+
+Mladost 1, 18, 5, 6, 16, 1750 Sofia, Bulgaria
+
+\url{https://www.veldsoft.eu/}
+
+\vspace*{0.25in}
+Copyright © 2026, Velbazhd Software LLC
+
+\vspace*{0.25in}
+All rights reserved. No portion of this book may be reproduced in any form without permission from the publisher, except as permitted by U.S. copyright law. For permissions contact: velbazhd.software@gmail.com +359 89 8237103
+
+\vspace*{0.25in}
+ISBN: ***-***-**-****-* (print)
+
+Printed by request
+\clearpage
+
+\tableofcontents
+\listoffigures
+%\listoftables
+\lstlistoflistings
+
+\clearpage
+\thispagestyle{empty} 
+\pagestyle{empty}
+
+\mainmatter
+
+\pagestyle{fancy}
+
+\chapter{Game Specification}
+
+\section{General Description}
+
+The mathematical engine will be a low-volatility, high-hit-frequency profile driven by a bidirectional evaluation and a multi-state re-spin feature. The physical structure consists of a 5x3 matrix utilizing 10 fixed paylines. Wins are evaluated from both left-to-right starting on the first reel and right-to-left starting on the fifth reel. Because of this dual evaluation, any five-of-a-kind combination inherently triggers twice, meaning that paytable liability for maximum hits must account for a double payout. A top symbol mathematically valued at 250 coins for a five-of-a-kind will always cost the math model 500 coins when it lands.
+
+The base game utilizes heavily stacked symbols on the virtual reel strips, typically featuring five low-tier symbols, two high-tier symbols, and one special wild. This stacking creates a highly visual experience of clustered line hits or complete dead spins while maintaining low volatility by weighting the stacks heavily toward the lowest-paying symbols. A standard base-game symbol probability matrix will be constructed alongside secondary sets for the re-spin states. The base game symbol probabilities should be explicitly weighted to make natural five-of-a-kind hits of high-tier symbols extremely rare without the intervention of the expanding wild feature.
+
+The core mathematical engine will rely on an expanding sticky wild re-spin mechanism, modeled as a progressive state machine or Markov chain. Wilds appear exclusively on the second, third, and fourth reels. In the initial base spin state, a landing wild expands to cover its entire reel, evaluates any line wins, and transitions the game to the first re-spin state. During this first re-spin, the expanded wild reel becomes locked, and the remaining four reels spin using modified reel strips that carry different symbol weights and wild landing probabilities. If no new wild lands, wins are evaluated and the state resets to the base game. If a second wild lands, it expands, pays, and triggers the second re-spin state where two center reels are now locked. Landing a third wild triggers the final state, locking all three center reels while only the first and fifth reels spin. Because the outer reels contain no wilds, the feature strictly caps at three consecutive re-spins, naturally bounding the expected value and preventing infinite mathematical loops.
+
+The game targets a theoretical return to player of roughly 96.1 percent, with a hit frequency around 22.6 percent. This profile yields a distinctly low volatility index, mathematically favoring frequent, small payouts over large multipliers. The game's absolute maximum exposure is capped at 500 times the total bet. This maximum liability occurs only when the entire screen fills with the top-tier symbol, almost exclusively during a final re-spin state where the three center reels are completely wild, and the outer reels perfectly align the highest-paying symbols.
+
+\section{Pay Table and Lines}
+
+\backmatter
+
+\chapter*{About the Authors}
+The authors are a team primarily affiliated with the Institute of Information and Communication Technologies, part of the Bulgarian Academy of Sciences.
+
+\begin{thebibliography}{99}
+\thispagestyle{empty}
+\bibitem{}
+\end{thebibliography}
+
+\end{document}
