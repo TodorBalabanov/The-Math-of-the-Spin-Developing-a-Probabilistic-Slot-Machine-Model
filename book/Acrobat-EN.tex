@@ -30,7 +30,7 @@
 \fancyhead[LO]{\small The Math of the Spin}
 \renewcommand{\headrulewidth}{0.1pt}
 \fancyfoot[LE,RO]{}
-\fancyfoot[RE]{\small Balabanov T. et al. $\scriptstyle\blacklozenge$ 2026 \copyright}
+\fancyfoot[RE]{\small Balabanov T. et al. 2026 \copyright}
 \fancyfoot[LO]{\small Velbazhd Software LLC $\scriptstyle\blacklozenge$ Sofia $\scriptstyle\blacklozenge$ Bulgaria}
 \renewcommand{\footrulewidth}{0.1pt}
 
@@ -78,13 +78,13 @@
 \frontmatter
 
 \thispagestyle{empty}
-\begin{center} \vspace*{2in} \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic Slot Machine Model}\\ \vspace*{0.25in} \Large\textit{} \end{center}
+\begin{center} \vspace*{2in} \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic\\ Slot Machine Model}\\ \vspace*{0.25in} \Large\textit{} \end{center}
 \clearpage
 
 \thispagestyle{empty}
 \begin{center}
     \vspace*{1in}
-    \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic Slot Machine Model} \\
+    \Large\textbf{The Math of the Spin:\\ Developing a Probabilistic\\ Slot Machine Model} \\
     \vspace*{0.25in} \Large\textit{} \\
     \vfill
     \large Todor Balabanov, Nikita Moshenskiy,\\ Denis Tsvetanov, Vladislav Saykov,\\ Radoslav Batalski \\
@@ -135,12 +135,65 @@ Printed by request
 \clearpage
 \thispagestyle{empty} 
 \pagestyle{empty}
+LIMIT OF LIABILITY/DISCLAIMER OF WARRANTY: WHILE THE PUBLISHER AND AUTHORS HAVE USED THEIR BEST EFFORTS IN PREPARING THIS WORK, THEY MAKE NO REPRESENTATIONS OR WARRANTIES WITH RESPECT TO THE ACCURACY OR COMPLETENESS OF THE CONTENTS OF THIS WORK AND SPECIFICALLY DISCLAIM ALL WARRANTIES, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. NO WARRANTY MAY BE CREATED OR EXTENDED BY SALES REPRESENTATIVES, WRITTEN SALES MATERIALS, OR PROMOTIONAL STATEMENTS FOR THIS WORK. THE FACT THAT AN ORGANIZATION, WEBSITE, OR PRODUCT IS REFERRED TO IN THIS WORK AS A CITATION AND/OR POTENTIAL SOURCE OF FURTHER INFORMATION DOES NOT MEAN THAT THE PUBLISHER AND AUTHORS ENDORSE THE INFORMATION OR SERVICES THE ORGANIZATION, WEBSITE, OR PRODUCT MAY PROVIDE OR RECOMMENDATIONS IT MAY MAKE. THIS WORK IS SOLD WITH THE UNDERSTANDING THAT THE PUBLISHER IS NOT ENGAGED IN RENDERING PROFESSIONAL SERVICES. THE ADVICE AND STRATEGIES CONTAINED HEREIN MAY NOT BE SUITABLE FOR YOUR SITUATION. YOU SHOULD CONSULT WITH A SPECIALIST WHERE APPROPRIATE. FURTHER, READERS SHOULD BE AWARE THAT WEBSITES LISTED IN THIS WORK MAY HAVE CHANGED OR DISAPPEARED BETWEEN WHEN THIS WORK WAS WRITTEN AND WHEN IT IS READ. NEITHER THE PUBLISHER NOR THE AUTHORS SHALL BE LIABLE FOR ANY LOSS OF PROFIT OR ANY OTHER COMMERCIAL DAMAGES, INCLUDING BUT NOT LIMITED TO SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR OTHER DAMAGES.
 
 \mainmatter
 
 \pagestyle{fancy}
 
+\chapter{Introduction}
+
+The casino floor is a carefully orchestrated landscape of sound and light, but its undisputed centerpieces are the slot machines. Row upon row of brightly lit cabinets command most gaming revenue and floor space. To the casual observer, they are simple devices of luck, requiring nothing more than pressing a button and hoping for a matching combination. However, beneath their flashing screens and ringing bells lies one of the most sophisticated integrations of mathematics, computer science, and behavioral psychology ever designed.
+
+The modern slot machine bears little internal resemblance to its mechanical ancestors. In the past, spinning physical reels clicked into place, determined by tension springs and gravity. Today, the spinning symbols are nothing more than a visual facade, an elaborate theatrical performance concealing the true engine of the game: the random number generator. This microprocessor is the heart of the machine, continuously cycling through thousands of number combinations every single second, even when the cabinet sits idle.
+
+The exact millisecond a player presses the spin button, the computer freezes on a specific sequence of numbers. This sequence dictates the outcome before the reels on the screen even begin to move. The spinning animation that follows, prolonging the suspense and capturing the player's attention, is entirely ornamental. The game does not gradually conclude; it knows the result instantly. This technological shift means that nothing a player does, from the timing of their button press to the temperature of the machine, can influence the outcome. Each spin is a mathematically independent event, carrying no memory of the past and holding no promises for the future.
+
+The transition from physical mechanics to digital calculation solved a major design limitation for game developers. A physical reel can only hold a limited number of symbols and blank spaces, restricting the odds and preventing life-changing jackpots. In the 1980s, the invention of virtual reel mapping fundamentally changed the gambling industry.
+
+Virtual mapping allows a computer to assign multiple digital numbers to a single physical symbol on the reel. In the software, a high-paying jackpot symbol might correspond to just one number out of thousands, while a low-paying symbol or a blank space might correspond to dozens of numbers. This invisible imbalance lets casinos offer astronomical payouts while mathematically ensuring the house retains its edge. The player sees a reel with an equal number of jackpot symbols and blanks, assuming a fair physical probability, but the virtual map dictates that the blanks will be selected far more frequently.
+
+The financial heartbeat of this system is the Return to Player percentage. This metric represents the theoretical amount of money the machine is programmed to pay back over millions of spins. A game with a ninety-five percent return is mathematically guaranteed to keep five cents of every dollar wagered in the long run. Combined with volatility, which dictates whether a game pays out frequent small wins or rare massive jackpots, developers can precisely engineer the financial behavior of every machine on the floor.
+
+Slot machines are the undisputed kings of the casino, drawing more players and generating more revenue than table games like blackjack or craps. Their dominance comes from their accessibility and their mastery of human psychology. Unlike poker, which demands strict attention to strategy and an understanding of complex rules, slot machines ask nothing of the player. There is no social pressure, no dealer to intimidate, and no etiquette to learn. The barrier to entry is entirely removed, allowing anyone to sit down and instantly participate in the gamble.
+
+The game's lasting appeal relies heavily on intermittent reinforcement, a psychological concept in which rewards are delivered at unpredictable intervals. When a player wins, the brain releases a surge of dopamine, the neurotransmitter associated with pleasure and reward. Because the payouts are entirely random, the brain cannot predict when the next reward will arrive, keeping the player in a state of heightened anticipation. This neurological loop is reinforced by the machine's audiovisual design. Triumphant musical chords, cascades of coins, and vibrant animations celebrate every win, no matter how small.
+
+Game designers also employ a concept known as losses disguised as wins. If a player wagers one dollar and wins back fifty cents, the machine still erupts in a celebratory symphony of lights and sounds. The player has technically lost half their wager. However, the sensory feedback convinces the brain that a victory has occurred, smoothing over the emotional sting of the loss and encouraging another spin.
+
+Perhaps the most potent psychological tool within the slot machine is the near miss. Thanks to virtual reel mapping, developers can program the machine to display high-paying symbols just above or below the payline frequently. When a player sees two jackpot symbols align and the third land just one space away, their brain reacts almost identically to an actual win. This near miss creates a powerful illusion of progress, convincing the player that they are getting closer to a victory and compelling them to keep playing.
+
+Ultimately, the slot machine is an environment designed to induce a state of flow, often referred to by frequent players as the machine zone. In this state, the outside world fades away, and the rhythm of placing a bet, pressing a button, and anticipating the outcome becomes a meditative, almost hypnotic cycle. This flawless marriage of mathematical certainty and psychological comfort makes the slot machine the most captivating and profitable game of chance ever invented.
+
+Applied mathematicians design the entire financial and psychological experience of a slot machine through rigorous probability models, orchestrating exactly how and when a game pays out. Before developing any graphics or themes, mathematicians build the game's engine using a massive, complex spreadsheet known as a PAR (Probability and Accounting Report) sheet.
+
+Creating this mathematical model relies on manipulating several core principles of probability and statistics to guarantee the casino's profit margin while keeping the player engaged.
+
+The foundational step in slot mathematics is mapping the outputs of the Random Number Generator to the physical or digital symbols on the screen. Because modern games need to offer massive jackpots without losing money, mathematicians cannot rely on standard physical probabilities. Instead, they use virtual reel mapping.
+
+In the math model, a virtual reel might have 256 distinct stops, but the visible reel only has 22 symbols. The mathematician intentionally weights the virtual reel so that high-paying symbols correspond to only one or two virtual stops, while low-paying symbols or blanks correspond to dozens.
+
+If a mathematician designs a 3-reel game with 256 virtual stops per reel, the total combinatoric space is 256 x 256 x 256, resulting in 16,777,216 possible outcomes. By knowing the exact number of virtual stops assigned to every symbol, the mathematician knows the precise probability of every single combination landing on the payline.
+
+Once the probabilities are mapped, the mathematician designs the Return to Player. This is the theoretical percentage of all wagered money the machine will pay back over millions of spins.
+
+To achieve a specific RTP, the mathematician calculates the Expected Value for every winning combination using the formula EV = Probability x Payout.
+
+By tweaking the virtual reel weights or adjusting the payout amounts in the PAR sheet, the mathematician balances the sum of all Expected Values until it hits the casino's exact target - for instance, an RTP of 95\% - ensuring a guaranteed 5\% house edge over time.
+
+Two slot machines can have the same 95\% RTP but feel entirely different to play. Volatility (or variance) controls this: it is the mathematical measure of how the RTP budget is distributed.
+
+In Low Volatility, the mathematician designs the pay table so a large portion of the RTP comes from frequent, small wins. The player might win on 30\% of their spins (a high Hit Frequency), but the payouts are often equal to or less than their initial bet. This smooths out the statistical variance, extending the player's time on the device.
+
+In High Volatility, the mathematician starves the bottom of the pay table, allocating the RTP budget to rare, massive jackpots. The hit frequency drops significantly, resulting in long losing streaks punctuated by sudden, massive payouts.
+
+Mathematicians calculate the standard deviation of the payout distribution to assign a Volatility Index to the game, allowing casino operators to understand the statistical risk and short-term financial swings a specific machine will bring to their casino floor.
+
+There are various methods for implementing slot games, including mathematical models. One of the most popular approaches is to arrange symbols on virtual reels, known as strips, which simulate the mechanics of traditional slot machines. After the reels spin, they stop at specific positions, and the game assesses the winning combinations. This book illustrates the mathematical modeling of slot games, but instead of using virtual reels, it employs a probability matrix to determine the appearance of each symbol.
+
 \chapter{Game Specification}
+
+This book will use a well-known, successful game mechanic developed by many leading manufacturers. No specific game studio or title will be mentioned to protect the product owner's copyright.
 
 \section{General Description}
 
@@ -152,11 +205,14 @@ The core mathematical engine will rely on an expanding sticky wild re-spin mecha
 
 The game targets a theoretical return to player of roughly 96.1 percent, with a hit frequency around 22.6 percent. This profile yields a distinctly low volatility index, mathematically favoring frequent, small payouts over large multipliers. The game's absolute maximum exposure is capped at 500 times the total bet. This maximum liability occurs only when the entire screen fills with the top-tier symbol, almost exclusively during a final re-spin state where the three center reels are completely wild, and the outer reels perfectly align the highest-paying symbols.
 
-\section{Pay Table and Lines}
+\section{Paytable and Paylines}
+
+\chapter{Conclusions}
 
 \backmatter
 
 \chapter*{About the Authors}
+\thispagestyle{empty}
 The authors are a team primarily affiliated with the Institute of Information and Communication Technologies, part of the Bulgarian Academy of Sciences.
 
 \begin{thebibliography}{99}
