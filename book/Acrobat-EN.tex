@@ -71,6 +71,8 @@
     frame=single
 }
 
+\renewcommand{\lstlistlistingname}{List of Source Codes}
+
 \begin{document}
 
 \sloppy
@@ -128,9 +130,9 @@ Printed by request
 \clearpage
 
 \tableofcontents
-\listoffigures
-%\listoftables
-\lstlistoflistings
+%\listoffigures
+\listoftables
+%\lstlistoflistings
 
 \clearpage
 \thispagestyle{empty} 
@@ -206,6 +208,111 @@ The core mathematical engine will rely on an expanding sticky wild re-spin mecha
 The game targets a theoretical return to player of roughly 96.1 percent, with a hit frequency around 22.6 percent. This profile yields a distinctly low volatility index, mathematically favoring frequent, small payouts over large multipliers. The game's absolute maximum exposure is capped at 500 times the total bet. This maximum liability occurs only when the entire screen fills with the top-tier symbol, almost exclusively during a final re-spin state where the three center reels are completely wild, and the outer reels perfectly align the highest-paying symbols.
 
 \section{Paytable and Paylines}
+
+A total wager of 20 is evenly divided across ten fixed paylines, resulting in a stake of two being placed on each line. The game grid is structured upon five reels and three rows, across which the ten invisible paylines are permanently traced. Winning combinations are evaluated in two directions by the game engine; identical symbols are matched consecutively from the leftmost reel to the right, as well as from the rightmost reel to the left. If a five-of-a-kind combination is achieved across the entire screen, the system pays it twice, as the unbroken sequence is independently validated from both the left and right boundaries simultaneously.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\hline
+ & \textbf{0 of} & \textbf{1 of} & \textbf{2 of} & \textbf{3 of} & \textbf{4 of} & \textbf{5 of} \\
+\hline
+Wild & 0 & 0 & 0 & 0 & 0 & 0 \\
+Symbol 01 & 0 & 0 & 0 & 100 & 400 & 500 \\
+Symbol 02 & 0 & 0 & 0 & 50 & 120 & 240 \\
+Symbol 03 & 0 & 0 & 0 & 20 & 50 & 120 \\
+Symbol 04 & 0 & 0 & 0 & 16 & 40 & 100 \\
+Symbol 05 & 0 & 0 & 0 & 14 & 30 & 80 \\
+Symbol 06 & 0 & 0 & 0 & 10 & 20 & 50 \\
+Symbol 07 & 0 & 0 & 0 & 10 & 20 & 50 \\
+\hline
+\end{tabular}
+\caption{Paytable}
+\end{table}
+
+The paytable is calculated by multiplying the base coin values by the specific line bet of two. The lowest tier of payouts is set by Symbol 07 and Symbol 06, which award 10, 20, and 50 credits for sequences of three, four, or five identical symbols. Symbol 05 is valued slightly higher, returning 14, 30, and 80 credits for the same respective combinations. The Symbol 04 is compensated with 16, 40, and 100 credits, while the Symbol 03 is programmed to pay 20, 50, and 120 credits when successful matches are formed along any of the ten paths.
+
+Two classic casino motifs generate the premium payouts. The Symbol 02 pays 50, 120, and 240 credits when combinations of three, four, and five are verified on an active line. The highest standard rewards are reserved for the Symbol 01. When three, four, or five symbols are aligned, maximum payouts of 100, 400, and 500 credits are distributed to the balance.
+
+During these wins, the three center reels are often influenced by the Wild symbol. When this substitute is presented on the second, third, or fourth reel, the expanding Wild covers the entire column, and a complementary re-spin is automatically initiated. All active paylines are subsequently re-evaluated by the game, allowing additional combinations to be completed from either side of the screen. At the same time, the expanded wilds are held firmly in place.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cc}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & & & & \\ \hline
+X & X & X & X & X \\ \hline
+ & & & & \\ \hline
+\end{tabular}
+&
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+X & X & & X & X \\ \hline
+ & & X & & \\ \hline
+ & & & & \\ \hline
+\end{tabular} \\[4ex]
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+X & X & X & X & X \\ \hline
+ & & & & \\ \hline
+ & & & & \\ \hline
+\end{tabular}
+&
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & & & & \\ \hline
+ & & X & & \\ \hline
+X & X & & X & X \\ \hline
+\end{tabular} \\[4ex]
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & & & & \\ \hline
+ & & & & \\ \hline
+X & X & X & X & X \\ \hline
+\end{tabular}
+&
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & & & & \\ \hline
+X & & & & X \\ \hline
+ & X & X & X & \\ \hline
+\end{tabular} \\[4ex]
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+X & & & & X \\ \hline
+ & X & & X & \\ \hline
+ & & X & & \\ \hline
+\end{tabular}
+&
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & X & X & X & \\ \hline
+X & & & & X \\ \hline
+ & & & & \\ \hline
+\end{tabular} \\[4ex]
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & & X & & \\ \hline
+ & X & & X & \\ \hline
+X & & & & X \\ \hline
+\end{tabular}
+&
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & X & & X & \\ \hline
+X & & X & & X \\ \hline
+ & & & & \\ \hline
+\end{tabular} \\
+\end{tabular}
+\caption{Paylines}
+\end{table}
+
+There are 10 fixed lines, but they are evaluated in two directions, making the game effectively a 20-fixed-line game. When a single-line bet is 1, the total bet for the base game spin is 20. The pay table shows values based on a total bet of 20.
 
 \chapter{Conclusions}
 
