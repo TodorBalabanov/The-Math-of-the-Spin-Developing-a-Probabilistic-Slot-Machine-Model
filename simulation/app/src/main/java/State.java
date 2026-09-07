@@ -1,0 +1,6 @@
+enum State {
+	BASE_GAME,
+	FREE_SPINS_1,
+	FREE_SPINS_2,
+	FREE_SPINS_3,
+}

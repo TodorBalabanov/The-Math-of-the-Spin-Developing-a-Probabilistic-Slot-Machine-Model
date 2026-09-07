@@ -132,7 +132,7 @@ Printed by request
 \tableofcontents
 %\listoffigures
 \listoftables
-%\lstlistoflistings
+\lstlistoflistings
 
 \clearpage
 \thispagestyle{empty} 
@@ -313,6 +313,137 @@ X & & X & & X \\ \hline
 \end{table}
 
 There are 10 fixed lines, but they are evaluated in two directions, making the game effectively a 20-fixed-line game. When a single-line bet is 1, the total bet for the base game spin is 20. The pay table shows values based on a total bet of 20.
+
+\chapter{Modeling the Game}
+
+There are many ways to model a gambling slot machine, but one of the most efficient is to use Java. Java is well-known and widely accepted. Many third-party software libraries and frameworks are available. For optimization, this development will use a third-party framework based on genetic algorithms.
+
+\begin{lstlisting}[language=Java, caption={Console application single entry point}, label=listing-001]
+public class Main {
+    public static void main(String[] args) {
+    }
+}
+\end{lstlisting}
+
+Most efforts in mathematical modeling of the game focus on Monte Carlo simulation. Such a simulation can be implemented efficiently in a single console application (Listing \ref{listing-001}). A public class designated in the provided source code defines Main. Within this structure, the main method serves as the standard entry point for executing the Java application. This method accepts an array of string arguments to accommodate potential command-line inputs. Because the method body is empty, no operations are performed, no data is processed, and the program terminates immediately upon execution.
+
+\begin{lstlisting}[language=Java, caption={Game simulation class}, label=listing-003]
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+class SlotGame {
+	private static final Random PRNG = ThreadLocalRandom.current();
+
+	static final double RTP_TARGET = 0.961;
+
+	public Model model = new Model();
+
+	public Statistics statistics = new Statistics();
+}
+\end{lstlisting}
+
+The game initially includes an internal model representation, a statistical collection structure, and predefined constants (Listing \ref{listing-003}). The provided source code defines a class named SlotGame as the foundational structure for a slot machine simulation. Within this class, a static, unmodifiable pseudorandom number generator is initialized using the current thread-local context to facilitate concurrent randomization operations. A constant double-precision value, designated as the target return-to-player percentage, is established at 0.961 to govern the expected mathematical payout of the game system. Furthermore, public instances of a Model class and a Statistics class are instantiated as fields within the object so the application can actively manage and track internal game mechanics and ongoing gameplay metrics.
+
+\begin{lstlisting}[language=Java, caption={Internal game states}, label=listing-005]
+enum State {
+	BASE_GAME,
+	FREE_SPINS_1,
+	FREE_SPINS_2,
+	FREE_SPINS_3,
+}
+
+class SlotGame {
+	...
+	public State state = State.BASE_GAME;
+	...
+}
+
+\end{lstlisting}
+
+
+By game definition, gameplay can go through 4 different states (Listing \ref{listing-005}). The most used state is the base game mode, but by hitting the Wild symbol on the screen, the other 3 free spins states can be activated. For the initial experiments, only a single probability matrix for the reels will be used, but with model creation advances, the other 3 probability matrices can be introduced. This will allow better control over the RTP and the game's volatility.
+
+\section{Prize Symbols}
+
+\begin{lstlisting}[language=Java, caption={Prize symbols}, label=listing-002]
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+enum Symbol {
+	WILD(0, "Wild"),
+	SYMBOL01(1, "Symbol01"),
+	SYMBOL02(2, "Symbol02"),
+	SYMBOL03(3, "Symbol03"),
+	SYMBOL04(4, "Symbol04"),
+	SYMBOL05(5, "Symbol05"),
+	SYMBOL06(6, "Symbol06"),
+	SYMBOL07(7, "Symbol07");
+
+	private static final Random PRNG = ThreadLocalRandom.current();
+
+	private final int index;
+	private final String caption;
+
+	static Symbol random() {
+		return values()[PRNG.nextInt(values().length)];
+	}
+
+	private Symbol(int index, String caption) {
+		this.index = index;
+		this.caption = caption;
+	}
+
+	int index() {
+		return index;
+	}
+
+	String caption() {
+		return caption;
+	}
+
+	@Override
+	public String toString() {
+		return caption;
+	}
+}
+\end{lstlisting}
+
+The modeling starts from representing symbols in the game (Listing \ref{listing-002}). Within this framework, a enumeration named Symbol represents the distinct faces of a slot reel. Eight specific constants, consisting of a wild card and seven standard symbols, are established by this enumeration. An integer index and a string caption are assigned to each symbol upon instantiation by a private constructor. Concurrently, a pseudorandom number generator is initialized using a thread-local instance and retained as a static final variable. This generator is then used by a static method that randomly selects and returns one of the available symbols from the enumeration array. Getter methods provide access to the index and caption fields. Finally, the default string conversion method is overridden so that the descriptive caption is returned whenever the application requests a text representation of the symbol.
+
+\section{Collected Statistics}
+
+The collected statistics are handled in groups of variables (Listing \ref{listing-004}). The separate class is not intended to be the state-of-the-art OOP design. This class is intended only to provide variables as data containers. This research does not apply OOP principles because this writing is illustrative, and the emphasis is not on software development best practices. Initially, only basic statistics will be collected. As the modeling process advances, other statistics could be added as single-symbol hit frequencies.
+
+\begin{lstlisting}[language=Java, caption={Statistics container}, label=listing-004]
+import java.util.HashMap;
+import java.util.Map;
+
+class Statistics {
+	long wonMoney = 0L;
+	long lostMoney = 0L;
+	long baseMoney = 0L;
+	long free1Money = 0L;
+	long free2Money = 0L;
+	long free3Money = 0L;
+	long baseHitFrequency = 0L;
+	long free1HitFrequency = 0L;
+	long free2HitFrequency = 0L;
+	long free3HitFrequency = 0L;
+	long totalNumberOfBaseGames = 0L;
+	long totalNumberOfFree1Games = 0L;
+	long totalNumberOfFree2Games = 0L;
+	long totalNumberOfFree3Games = 0L;
+	Map<Integer, Long> baseWinHistogram = new HashMap<>();
+	Map<Integer, Long> free1WinHistogram = new HashMap<>();
+	Map<Integer, Long> free2WinHistogram = new HashMap<>();
+	Map<Integer, Long> free3WinHistogram = new HashMap<>();
+	long numberOfBaseGameSpins = 1_000_000L;
+}
+\end{lstlisting}
+
+The Statistics class, as defined in the provided source code, serves as a centralized repository for tracking the mathematical and financial metrics of a slot game. Within this framework, numerous long-integer variables are initialized to zero to record aggregate data on cumulative monetary wins and losses systematically. Furthermore, these variables categorize and store specific financial yields, hit frequencies, and total game execution counts across distinct gameplay states, delineated as a base game and three separate tiers of free games. To enable granular analysis of payout distributions, four mapping data structures are instantiated using hash maps, linking discrete win amounts to their exact frequency of occurrence across the corresponding game modes. Finally, a variable dictating the total number of simulated base game spins is established and explicitly initialized to one million, providing a target duration for statistical simulations.
+
+\section{Internal Game Model}
 
 \chapter{Conclusions}
 
