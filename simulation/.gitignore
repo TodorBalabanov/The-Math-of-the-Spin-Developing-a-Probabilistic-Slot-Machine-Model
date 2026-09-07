@@ -62,3 +62,9 @@ hs_err_pid*
 
 # Mac OS X
 .DS_Store
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Kotlin plugin data
+.kotlin
