@@ -1,7 +1,7 @@
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-class SlotGame {
+final class SlotGame {
 	private static final Random PRNG = ThreadLocalRandom.current();
 
 	static final double RTP_TARGET = 0.961;

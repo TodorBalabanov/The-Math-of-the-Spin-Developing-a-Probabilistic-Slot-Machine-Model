@@ -1,7 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 
-class Statistics {
+final class Statistics {
 	long wonMoney = 0L;
 	long lostMoney = 0L;
 	long baseMoney = 0L;

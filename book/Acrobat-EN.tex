@@ -445,6 +445,137 @@ The Statistics class, as defined in the provided source code, serves as a centra
 
 \section{Internal Game Model}
 
+The game's internal model consists of a paytable, paylines, and symbols distributed across reels. The game specification determines the paytable and paylines (Listing \ref{listing-006}). Usually, the game designer's team provides this information. They know what kind of game players in a specific market would like.
+
+\begin{lstlisting}[language=Java, caption={Predetermined values}, label=listing-006]
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+final class Model {
+	private static final int[][] PRIZES = {
+			{ 0, 0, 0, 0, 0, 0, 0, 0, },
+			{ 0, 0, 0, 0, 0, 0, 0, 0, },
+			{ 0, 0, 0, 0, 0, 0, 0, 0, },
+			{ 0, 100, 50, 20, 16, 14, 10, 10, },
+			{ 0, 400, 120, 50, 40, 30, 20, 20, },
+			{ 0, 500, 240, 120, 100, 80, 50, 50, },
+	};
+
+	private static final int[][] LINES = {
+			{ 1, 1, 1, 1, 1, },
+			{ 0, 0, 0, 0, 0, },
+			{ 2, 2, 2, 2, 2, },
+			{ 0, 1, 2, 1, 0, },
+			{ 2, 1, 0, 1, 2, },
+			{ 0, 0, 1, 0, 0, },
+			{ 2, 2, 1, 2, 2, },
+			{ 1, 2, 2, 2, 1, },
+			{ 1, 0, 0, 0, 1, },
+			{ 1, 0, 1, 0, 1, },
+	};
+
+	...
+}
+\end{lstlisting}
+
+The standard Java utility classes for list and map data structures are imported at the outset of the document. Next, a restricted class named Model is declared to hold the simulation's foundational data. Within this class, a constant two-dimensional integer array named PRIZES is instantiated to represent the game's paytable. This array has six rows and eight columns. The rows are formulated to correspond to the length of a matching symbol sequence, while the columns are mapped to the distinct symbols present in the game. Zero values are assigned to the first three rows, reflecting the mathematical model's rule that sequences of fewer than three symbols are not compensated. The remaining rows specify credit values, detailing the escalating payouts awarded for combinations of three, four, and five matching symbols.
+
+Immediately following the paytable, a second constant two-dimensional integer array named LINES is defined. This matrix delineates the exact trajectories of the game's paylines across the slot grid. The array has ten rows, corresponding to ten independent paylines, and five columns, representing the five reels of the slot machine. Each row stores specific grid coordinates, dictating the vertical position on each reel that must be evaluated to determine whether a winning symbol sequence was achieved during a simulated spin.
+
+A paytable represented as a 2D array is an old-fashioned approach to modeling prizes. Each symbol has an index in the 2D array, and the length of the winning combination provides the second index for the prize cell. This representation was efficient and tricky in languages like C, but Java provides a much better way to model pay tables (Listing \ref{listing-007}).
+
+\begin{lstlisting}[language=Java, caption={Efficient paytable representation}, label=listing-007]
+final class Model {
+	...
+	
+	Map<Symbol, List<Integer>> payTable = new HashMap<>();
+
+	Model() {
+		...
+		
+		Symbol[] symbols = Symbol.values();
+		for (int i = 0; i < symbols.length; i++) {
+			List<Integer> payouts = new ArrayList<>();
+			for (int count = 0; count < PRIZES.length; count++) {
+				payouts.add(PRIZES[count][i]);
+			}
+			payTable.put(symbols[i], payouts);
+		}
+		
+		...
+	}
+}
+\end{lstlisting}
+
+A member variable named payTable is declared as a Map and instantiated as a HashMap, designed to associate each Symbol with a List of Integer values. In the Model class constructor, this structure is initialized. An array comprising all enumerated Symbol values is first retrieved. Next, a primary loop iterates over each element in this array. During each iteration, a new ArrayList designated as payouts is instantiated. A nested loop is then initiated to traverse the rows of the previously defined PRIZES matrix. In this inner loop, the payout amount for the current symbol index and combination length is extracted and appended to the payouts list. After the nested loop completes, the fully populated payouts list is inserted into the payTable map, using the respective symbol as the mapping key.
+
+Because the paytable and the paylines are fixed by design, the only flexible part of the game model is the reels. The model can be invalid if Wild symbols appear on the first or last reel (Listing \ref{listing-008}). As a key difference in the proposed model, the reels are not presented as a discrete probability distribution in a 2D array. Instead, each symbol will be presented with its own probability of appearing on each of the 5 reels. With this design, the length of the virtual reels does not need to be decided. An undesired effect of this design is that particular symbol patterns will not appear as they do in the regular slot machines developed with strips of symbols. For the initial experiments, a single probability matrix will be used for each of the four game states.
+
+\begin{lstlisting}[language=Java, caption={Efficient reels representation}, label=listing-008]
+final class Model {
+	...
+	
+	boolean valid = true;
+
+	Map<Integer, Map<Symbol, Double>> baseReels = new HashMap<>();
+
+	Map<Integer, Map<Symbol, Double>> free1Reels = baseReels;
+
+	Map<Integer, Map<Symbol, Double>> free2Reels = baseReels;
+
+	Map<Integer, Map<Symbol, Double>> free3Reels = baseReels;
+
+	Model() {
+		...
+		
+		for (int i = 0; i < 5; i++) {
+			HashMap<Symbol, Double> reel;
+			baseReels.put(i, reel = new HashMap<>());
+			Symbol[] symbols = Symbol.values();
+			for (int j = 0; j < symbols.length; j++) {
+				if ((i == 0 || i == 4) && symbols[j] == 
+				Symbol.WILD) {
+					reel.put(symbols[j], 0D);
+				} else {
+					reel.put(symbols[j], 1D);
+				}
+			}
+			normalize(reel);
+		}
+		
+		...
+	}
+}
+\end{lstlisting}
+
+A boolean variable named valid is declared and initialized to true. A nested map data structure named baseReels is instantiated as a HashMap to store the probability weights of symbols for each reel. Subsequently, three additional map variables named free1Reels, free2Reels, and free3Reels are declared and directly assigned the reference of baseReels, establishing that the base game reel configurations are applied by default during the various free spin features.
+
+In the constructor, a primary loop runs five times to process the configuration for each of the five reels. In each iteration, a new HashMap designated as reel is instantiated and inserted into the baseReels collection, using the current loop index as the mapping key. The array of enumerated Symbol values is then retrieved, and a secondary loop is initiated to iterate through each symbol. Conditional logic is evaluated within this secondary loop to determine the initial weight assigned to each symbol on the current reel. If the evaluated symbol is identified as a Wild symbol and the current reel index corresponds to either the first or the fifth reel, a double value of zero is assigned, effectively preventing the wild symbol from being placed on the outer reels. For all other symbols and reel positions, a default double value of one is assigned and inserted into the reel map. After all symbols for the current reel have been processed, a function named normalize is invoked on the reel map, ensuring that the raw numerical weights are mathematically converted into a proper probability distribution (Listing \ref{listing-009}). 
+
+Initially, all symbols will have an equal probability of appearing. Only the Wild symbol is restricted on the first and last reels. During the optimization process, the probabilities will be changed by the Genetic Algorithm, so the values should be normalized. The total sum of the probabilities should be one.
+
+\begin{lstlisting}[language=Java, caption={Probabilities normalization}, label=listing-009]
+final class Model {
+	...
+
+	void normalize(Map<Symbol, Double> reel) {
+		double sum = 0D;
+		for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+			sum += entry.getValue();
+		}
+		for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+			entry.setValue(entry.getValue() / sum);
+		}
+	}
+
+	...
+}
+\end{lstlisting}
+
+The normalize method accepts a map representing a single reel, pairing symbols with their corresponding double numerical weights. Within this method, a local double variable named sum is declared and initialized to zero. The first loop iterates over all entries in the provided reel map. During each iteration of this first loop, the numerical value associated with the current map entry is extracted and added to the cumulative sum variable. After this summation, a second loop traverses the same set of map entries. Within this subsequent loop, the stored value for each symbol is updated. Specifically, the entry's current weight is divided by the previously calculated total sum, and the resulting fraction is assigned back to the map entry. Through this operation, the raw, arbitrary symbol weights are systematically transformed into a normalized probability distribution.
+
 \chapter{Conclusions}
 
 \backmatter
