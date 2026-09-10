@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 final class Model {
-	private static final int[][] PRIZES = {
+	static final int[][] PRIZES = {
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
@@ -13,7 +13,7 @@ final class Model {
 			{ 0, 500, 240, 120, 100, 80, 50, 50, },
 	};
 
-	private static final int[][] LINES = {
+	static final int[][] LINES = {
 			{ 1, 1, 1, 1, 1, },
 			{ 0, 0, 0, 0, 0, },
 			{ 2, 2, 2, 2, 2, },

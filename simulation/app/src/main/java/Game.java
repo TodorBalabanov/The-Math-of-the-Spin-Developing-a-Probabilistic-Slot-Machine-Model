@@ -32,6 +32,45 @@ final class Game {
 		}
 	}
 
+	private int lineWin(Symbol[] line) {
+		Symbol symbol = line[0];
+		if (symbol == Symbol.WILD) {
+			model.valid = false;
+			return 0;
+		}
+
+		int count = 0;
+		for (int i = 0; i < line.length; i++) {
+			if (line[i] == symbol || line[i] == Symbol.WILD) {
+				count++;
+			} else {
+				break;
+			}
+		}
+
+		return model.payTable.get(symbol).get(count);
+	}
+
+	private int linesWin(Symbol[][] view) {
+		int win1 = 0;
+		int win2 = 0;
+		Symbol[] line1 = { null, null, null, null, null };
+		Symbol[] line2 = { null, null, null, null, null };
+		for (int l = 0; l < Model.LINES.length; l++) {
+			for (int i = 0, j = line2.length - 1; i < line1.length && j >= 0; i++, j--) {
+				int index1 = Model.LINES[l][i];
+				int index2 = Model.LINES[l][j];
+				line1[i] = view[i][index1];
+				line2[j] = view[i][index2];
+			}
+
+			win1 += lineWin(line1);
+			win2 += lineWin(line2);
+		}
+
+		return win1 + win2;
+	}
+
 	public void simulate() {
 		Symbol[][] view = {
 				{ null, null, null },
@@ -42,6 +81,9 @@ final class Game {
 		};
 
 		spin(model.baseCumulatives, view);
-		System.out.println(Arrays.deepToString(view));
+		System.out.println(linesWin(view));
+		System.out.println(
+				Arrays.deepToString(view).replace("], [", "],\n [").replace("[", "").replace("]", "").replace(" ", "")
+						.replace(",", "\t").replace("Wild", "Wild    "));
 	}
 }
