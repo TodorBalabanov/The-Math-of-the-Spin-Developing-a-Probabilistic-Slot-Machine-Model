@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,5 +104,28 @@ final class Model {
 			}
 			payTable.put(symbols[i], payouts);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "Model {\n" +
+				"  PRIZES = " + Arrays.deepToString(PRIZES) + "\n" +
+				"  LINES = " + Arrays.deepToString(LINES) + "\n" +
+				"  valid = " + valid + "\n" +
+				"  baseReels = " + baseReels + "\n" +
+				"  free1Reels = " + (free1Reels == baseReels ? "same as baseReels" : free1Reels) + "\n" +
+				"  free2Reels = " + (free2Reels == baseReels ? "same as baseReels" : free2Reels) + "\n" +
+				"  free3Reels = " + (free3Reels == baseReels ? "same as baseReels" : free3Reels) + "\n" +
+				"  baseCumulatives = " + baseCumulatives + "\n" +
+				"  free1Cumulatives = "
+				+ (free1Cumulatives == baseCumulatives ? "same as baseCumulatives" : free1Cumulatives) + "\n" +
+				"  free2Cumulatives = "
+				+ (free2Cumulatives == baseCumulatives ? "same as baseCumulatives" : free2Cumulatives) + "\n" +
+				"  free3Cumulatives = "
+				+ (free3Cumulatives == baseCumulatives ? "same as baseCumulatives" : free3Cumulatives) + "\n" +
+				"  reels = " + reels + "\n" +
+				"  cumulatives = " + cumulatives + "\n" +
+				"  payTable = " + payTable + "\n" +
+				"}";
 	}
 }

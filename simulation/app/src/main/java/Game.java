@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,10 +39,16 @@ final class Game {
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
 				if (view[i][j] == Symbol.WILD) {
+					int substitutions = 0;
 					for (int k = 0; k < view[i].length; k++) {
+						if (view[i][k] != Symbol.WILD) {
+							substitutions++;
+						}
 						view[i][k] = Symbol.WILD;
 					}
-					expanded++;
+					if (substitutions > 0) {
+						expanded++;
+					}
 					break;
 				}
 			}
@@ -89,7 +94,59 @@ final class Game {
 		return win;
 	}
 
-	public void simulate() {
+	private void singleFreeSpin(Symbol[][] view, int expanded) {
+		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
+		spin(model.cumulatives.get(state), view);
+		expanded += wildExpansion(view);
+		expanded--;
+
+		int win = linesWin(view);
+		if (win > 0) {
+			statistics.freeHitFrequency.merge(state, 1L, Long::sum);
+			statistics.freeMoney.merge(state, (long) win, Long::sum);
+			statistics.wonMoney += win;
+		}
+
+		statistics.freeWinHistograms.get(state).merge(win, 1L, Long::sum);
+
+		if (state == State.FREE_SPINS_1 && expanded > 0) {
+			state = State.FREE_SPINS_2;
+			singleFreeSpin(view, expanded);
+		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			state = State.FREE_SPINS_3;
+			singleFreeSpin(view, expanded);
+		} else if (state == State.FREE_SPINS_3 && expanded > 0) {
+			model.valid = false;
+		} else {
+			state = State.BASE_GAME;
+		}
+	}
+
+	private void singleBaseGame(Symbol[][] view) {
+		state = State.BASE_GAME;
+
+		statistics.totalNumberOfBaseGames++;
+		spin(model.baseCumulatives, view);
+		int expanded = wildExpansion(view);
+
+		int win = linesWin(view);
+		if (win > 0) {
+			statistics.baseHitFrequency++;
+			statistics.baseMoney += win;
+			statistics.wonMoney += win;
+		}
+
+		statistics.baseWinHistogram.merge(win, 1L, Long::sum);
+
+		if (expanded > 3) {
+			model.valid = false;
+		} else if (expanded > 0) {
+			state = State.FREE_SPINS_1;
+			singleFreeSpin(view, expanded);
+		}
+	}
+
+	void simulate() {
 		Symbol[][] view = {
 				{ null, null, null },
 				{ null, null, null },
@@ -98,12 +155,17 @@ final class Game {
 				{ null, null, null },
 		};
 
-		state = State.BASE_GAME;
-		spin(model.baseCumulatives, view);
-		wildExpansion(view);
-		System.out.println(linesWin(view));
-		System.out.println(
-				Arrays.deepToString(view).replace("], [", "],\n [").replace("[", "").replace("]", "").replace(" ", "")
-						.replace(",", "\t").replace("Wild", "Wild    "));
+		for (long g = 0L; g < statistics.numberOfBaseGameSpins; g++) {
+			statistics.lostMoney += 2 * model.LINES.length;
+
+			singleBaseGame(view);
+
+			if (model.valid == false) {
+				statistics.totalNumberOfBaseGames = 0;
+				statistics.wonMoney = 100;
+				statistics.lostMoney = 1;
+				break;
+			}
+		}
 	}
 }

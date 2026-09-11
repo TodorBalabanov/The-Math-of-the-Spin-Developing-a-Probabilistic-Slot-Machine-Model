@@ -331,10 +331,12 @@ Most efforts in mathematical modeling of the game focus on Monte Carlo simulatio
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-class SlotGame {
+final class Game {
 	private static final Random PRNG = ThreadLocalRandom.current();
 
 	static final double RTP_TARGET = 0.961;
+
+	static final double HIT_FREQUENCY_TARGET = 0.226;
 
 	public Model model = new Model();
 
@@ -352,14 +354,13 @@ enum State {
 	FREE_SPINS_3,
 }
 
-class SlotGame {
+final class Game {
 	...
 	public State state = State.BASE_GAME;
 	...
 }
 
 \end{lstlisting}
-
 
 By game definition, gameplay can go through 4 different states (Listing \ref{listing-005}). The most used state is the base game mode, but by hitting the Wild symbol on the screen, the other 3 free spins states can be activated. For the initial experiments, only a single probability matrix for the reels will be used, but with model creation advances, the other 3 probability matrices can be introduced. This will allow better control over the RTP and the game's volatility.
 
@@ -422,26 +423,36 @@ class Statistics {
 	long wonMoney = 0L;
 	long lostMoney = 0L;
 	long baseMoney = 0L;
-	long free1Money = 0L;
-	long free2Money = 0L;
-	long free3Money = 0L;
 	long baseHitFrequency = 0L;
-	long free1HitFrequency = 0L;
-	long free2HitFrequency = 0L;
-	long free3HitFrequency = 0L;
 	long totalNumberOfBaseGames = 0L;
-	long totalNumberOfFree1Games = 0L;
-	long totalNumberOfFree2Games = 0L;
-	long totalNumberOfFree3Games = 0L;
 	Map<Integer, Long> baseWinHistogram = new HashMap<>();
-	Map<Integer, Long> free1WinHistogram = new HashMap<>();
-	Map<Integer, Long> free2WinHistogram = new HashMap<>();
-	Map<Integer, Long> free3WinHistogram = new HashMap<>();
+	Map<State, Long> freeMoney = new HashMap<>();
+	Map<State, Long> freeHitFrequency = new HashMap<>();
+	Map<State, Long> totalNumberOfFreeGames = new HashMap<>();
+	Map<State, Map<Integer, Long>> freeWinHistograms = new HashMap<>();
 	long numberOfBaseGameSpins = 1_000_000L;
+
+	Statistics() {
+		freeMoney.put(State.FREE_SPINS_1, 0L);
+		freeMoney.put(State.FREE_SPINS_2, 0L);
+		freeMoney.put(State.FREE_SPINS_3, 0L);
+
+		freeHitFrequency.put(State.FREE_SPINS_1, 0L);
+		freeHitFrequency.put(State.FREE_SPINS_2, 0L);
+		freeHitFrequency.put(State.FREE_SPINS_3, 0L);
+
+		totalNumberOfFreeGames.put(State.FREE_SPINS_1, 0L);
+		totalNumberOfFreeGames.put(State.FREE_SPINS_2, 0L);
+		totalNumberOfFreeGames.put(State.FREE_SPINS_3, 0L);
+
+		freeWinHistograms.put(State.FREE_SPINS_1, new HashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_2, new HashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_3, new HashMap<>());
+	}
 }
 \end{lstlisting}
 
-The Statistics class, as defined in the provided source code, serves as a centralized repository for tracking the mathematical and financial metrics of a slot game. Within this framework, numerous long-integer variables are initialized to zero to record aggregate data on cumulative monetary wins and losses systematically. Furthermore, these variables categorize and store specific financial yields, hit frequencies, and total game execution counts across distinct gameplay states, delineated as a base game and three separate tiers of free games. To enable granular analysis of payout distributions, four mapping data structures are instantiated using hash maps, linking discrete win amounts to their exact frequency of occurrence across the corresponding game modes. Finally, a variable dictating the total number of simulated base game spins is established and explicitly initialized to one million, providing a target duration for statistical simulations.
+The Statistics class, as defined in the provided source code, serves as a centralized repository for tracking the mathematical and financial metrics of a slot game. Within this framework, numerous long-integer variables are initialized to zero to record aggregate data on cumulative monetary wins and losses systematically. Furthermore, these variables categorize and store specific financial yields, hit frequencies, and total game execution counts across distinct gameplay states, delineated as a base game and three separate tiers of free spins. To enable granular analysis of payout distributions, four mapping data structures are instantiated using hash maps, linking discrete win amounts to their exact frequency of occurrence across the corresponding game modes. Finally, a variable dictating the total number of simulated base game spins is established and explicitly initialized to one million, providing a target duration for statistical simulations.
 
 \section{Internal Game Model}
 
@@ -454,7 +465,7 @@ import java.util.List;
 import java.util.Map;
 
 final class Model {
-	private static final int[][] PRIZES = {
+	static final int[][] PRIZES = {
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
 			{ 0, 0, 0, 0, 0, 0, 0, 0, },
@@ -463,7 +474,7 @@ final class Model {
 			{ 0, 500, 240, 120, 100, 80, 50, 50, },
 	};
 
-	private static final int[][] LINES = {
+	static final int[][] LINES = {
 			{ 1, 1, 1, 1, 1, },
 			{ 0, 0, 0, 0, 0, },
 			{ 2, 2, 2, 2, 2, },
@@ -738,11 +749,17 @@ final class Game {
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
 				if (view[i][j] == Symbol.WILD) {
+					int substitutions = 0;
 					for (int k = 0; k < view[i].length; k++) 
 					{
+						if (view[i][k] != Symbol.WILD) {
+							substitutions++;
+						}
 						view[i][k] = Symbol.WILD;
 					}
-					expanded++;
+					if (substitutions > 0) {
+						expanded++;
+					}
 					break;
 				}
 			}
@@ -757,6 +774,126 @@ final class Game {
 The system generates a spin by iterating over the symbol grid. The system evaluates each position in the two-dimensional array sequentially. During this evaluation, the system checks the current game state and whether a Wild symbol is present. If the game state is determined to be anything other than the base game, and a Wild symbol is encountered at the current position, further generation for that specific position is bypassed.
 
 The wild expansion process scans the symbol grid column by column. A counter tracks the total number of expanded columns. Each column is evaluated to identify the presence of a Wild symbol. If a Wild symbol is detected anywhere within a specific column, an expansion is triggered. The function then populates the entire column with Wild symbols, replacing all existing symbols in that column. After modifying the column, the expansion counter increments, and the evaluation immediately advances to the next column. After processing all columns, the function returns the total count of expanded columns.
+
+Monte Carlo simulations are needed for gambling games to determine how much money will be taken and how much will be returned to the player. The simulation (Listing \ref{listing-015}) includes many base-game runs (Listing \ref{listing-016}) and possible free-spin runs (Listing \ref{listing-017}).
+
+\begin{lstlisting}[language=Java, caption={Simulation loop}, label=listing-015]
+final class Game {
+	...
+	
+	void simulate() {
+		Symbol[][] view = {
+				{ null, null, null },
+				{ null, null, null },
+				{ null, null, null },
+				{ null, null, null },
+				{ null, null, null },
+		};
+
+		for (long g = 0L; g < statistics.numberOfBaseGameSpins; g++) {
+			statistics.lostMoney += 2 * model.LINES.length;
+
+			singleBaseGame(view);
+
+			if (model.valid == false) {
+				statistics.totalNumberOfBaseGames = 0;
+				statistics.wonMoney = 100;
+				statistics.lostMoney = 1;
+				break;
+			}
+		}
+	}
+	
+	...
+}
+\end{lstlisting}
+
+The simulation begins by creating an empty symbol grid, represented as a two-dimensional array with five columns and three rows, initially filled with null values. A loop is subsequently executed to iterate through a predetermined total number of base game spins. In each step of the simulation loop, the wager is processed by increasing the total lost money statistic by twice the total number of configured paylines.
+
+Following this deduction, a single iteration of the base game is executed using the designated symbol grid. After the game resolves, the mathematical model is checked to ensure it remains valid. If the model is flagged as invalid, the standard simulation flow is interrupted. If the model is invalid, the primary statistical trackers are manually overridden: the total number of base games is reset to zero, the total won money is set to one hundred, and the total lost money is set to one. After applying these statistical overrides, the simulation loop terminates immediately.
+
+\begin{lstlisting}[language=Java, caption={Single base game}, label=listing-016]
+final class Game {
+	...
+	
+	private void singleBaseGame(Symbol[][] view) {
+		state = State.BASE_GAME;
+
+		statistics.totalNumberOfBaseGames++;
+		spin(model.baseCumulatives, view);
+		int expanded = wildExpansion(view);
+
+		int win = linesWin(view);
+		if (win > 0) {
+			statistics.baseHitFrequency++;
+			statistics.baseMoney += win;
+			statistics.wonMoney += win;
+		}
+
+		statistics.baseWinHistogram.merge(win, 1L, Long::sum);
+
+		if (expanded > 3) {
+			model.valid = false;
+		} else if (expanded > 0) {
+			state = State.FREE_SPINS_1;
+			singleFreeSpin(view, expanded);
+		}
+	}
+	
+	...
+}
+\end{lstlisting}
+
+The game state is initially set to the base game mode, and the statistic tracking total base games is incremented. A spin is then generated utilizing the base game cumulative probabilities and the provided symbol grid. After generating the spin, the wild expansion process runs on the grid, and the resulting number of expanded columns is recorded.
+
+The system then calculates the total win amount across all paylines. If a winning payout is determined to be greater than zero, a win event is registered by incrementing the base game hit frequency, and the calculated payout is added to both the base game money and the overall total won money statistics. The win amount is then logged in the base game win histogram, where the occurrence count for that specific payout value is updated.
+
+Finally, the system evaluates the total count of expanded wild columns. If the number of expanded columns exceeds three, the mathematical model is flagged as invalid. Alternatively, if the expansion count is greater than zero but does not exceed three, the game state is transitioned to the first free spins mode, and a single free spin is initiated using the current symbol grid and the recorded expansion count.
+
+\begin{lstlisting}[language=Java, caption={Single free spin}, label=listing-017]
+final class Game {
+	...
+	
+	private void singleFreeSpin(Symbol[][] view, int expanded) {
+		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
+		spin(model.cumulatives.get(state), view);
+		expanded += wildExpansion(view);
+		expanded--;
+
+		int win = linesWin(view);
+		if (win > 0) {
+			statistics.freeHitFrequency.merge(state, 1L, Long::sum);
+			statistics.freeMoney.merge(state, (long) win, Long::sum);
+			statistics.wonMoney += win;
+		}
+
+		statistics.freeWinHistograms.get(state).merge(win, 1L, 
+		Long::sum);
+
+		if (state == State.FREE_SPINS_1 && expanded > 0) {
+			state = State.FREE_SPINS_2;
+			singleFreeSpin(view, expanded);
+		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			state = State.FREE_SPINS_3;
+			singleFreeSpin(view, expanded);
+		} else if (state == State.FREE_SPINS_3 && expanded > 0) {
+			model.valid = false;
+		} else {
+			state = State.BASE_GAME;
+		}
+	}
+	
+	...
+}
+\end{lstlisting}
+
+The statistic tracking the total number of free games for the current game state is incremented. A spin is then generated utilizing the specific cumulative probabilities associated with this current state and the provided symbol grid. After generating the spin, the wild expansion process runs on the grid. The number of newly expanded columns is added to the previously recorded expanded count, after which the total expanded count is immediately decremented by one.
+
+The system then calculates the total win amount across all paylines. If the winning payout is greater than zero, a win event is registered. The free game hit frequency for the specific game state is incremented, and the calculated payout is added to both the free game money for that state and the overall total won money statistic. The win amount is then logged in the state-specific free win histogram, where the occurrence count for that exact payout value is updated.
+
+Finally, the current game state and the remaining expanded count are evaluated to determine the subsequent game phase. If the current state is the first free spins mode and the expanded count is greater than zero, the game state is transitioned to the second free spins mode, and another free spin is initiated. Similarly, if the state is already the second free spins mode and the expanded count remains greater than zero, the state is advanced to the third free spins mode, triggering another free spin. If the state is the third free spins mode and the expanded count is still greater than zero, the mathematical model is flagged as invalid. If no further expansions remain to trigger additional free spins, the game state is reverted entirely to the base game mode.
+
+\chapter{Game Optimization}
 
 \chapter{Conclusions}
 
