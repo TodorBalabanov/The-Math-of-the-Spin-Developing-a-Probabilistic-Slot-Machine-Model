@@ -500,12 +500,12 @@ A paytable represented as a 2D array is an old-fashioned approach to modeling pr
 \begin{lstlisting}[language=Java, caption={Efficient paytable representation}, label=listing-007]
 final class Model {
 	...
-	
+
 	Map<Symbol, List<Integer>> payTable = new HashMap<>();
 
 	Model() {
 		...
-		
+
 		Symbol[] symbols = Symbol.values();
 		for (int i = 0; i < symbols.length; i++) {
 			List<Integer> payouts = new ArrayList<>();
@@ -514,7 +514,7 @@ final class Model {
 			}
 			payTable.put(symbols[i], payouts);
 		}
-		
+
 		...
 	}
 }
@@ -527,7 +527,7 @@ Because the paytable and the paylines are fixed by design, the only flexible par
 \begin{lstlisting}[language=Java, caption={Efficient reels representation}, label=listing-008]
 final class Model {
 	...
-	
+
 	boolean valid = true;
 
 	Map<Integer, Map<Symbol, Double>> baseReels = new HashMap<>();
@@ -540,7 +540,7 @@ final class Model {
 
 	Model() {
 		...
-		
+
 		for (int i = 0; i < 5; i++) {
 			HashMap<Symbol, Double> reel;
 			baseReels.put(i, reel = new HashMap<>());
@@ -555,7 +555,7 @@ final class Model {
 			}
 			normalize(reel);
 		}
-		
+
 		...
 	}
 }
@@ -780,7 +780,7 @@ Monte Carlo simulations are needed for gambling games to determine how much mone
 \begin{lstlisting}[language=Java, caption={Simulation loop}, label=listing-015]
 final class Game {
 	...
-	
+
 	void simulate() {
 		Symbol[][] view = {
 				{ null, null, null },
@@ -803,7 +803,7 @@ final class Game {
 			}
 		}
 	}
-	
+
 	...
 }
 \end{lstlisting}
@@ -815,7 +815,7 @@ Following this deduction, a single iteration of the base game is executed using 
 \begin{lstlisting}[language=Java, caption={Single base game}, label=listing-016]
 final class Game {
 	...
-	
+
 	private void singleBaseGame(Symbol[][] view) {
 		state = State.BASE_GAME;
 
@@ -839,7 +839,7 @@ final class Game {
 			singleFreeSpin(view, expanded);
 		}
 	}
-	
+
 	...
 }
 \end{lstlisting}
@@ -853,7 +853,7 @@ Finally, the system evaluates the total count of expanded wild columns. If the n
 \begin{lstlisting}[language=Java, caption={Single free spin}, label=listing-017]
 final class Game {
 	...
-	
+
 	private void singleFreeSpin(Symbol[][] view, int expanded) {
 		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
 		spin(model.cumulatives.get(state), view);
@@ -882,7 +882,7 @@ final class Game {
 			state = State.BASE_GAME;
 		}
 	}
-	
+
 	...
 }
 \end{lstlisting}
@@ -895,6 +895,97 @@ Finally, the current game state and the remaining expanded count are evaluated t
 
 \chapter{Game Optimization}
 
+Optimizing gambling slot games involves achieving desired values for some of the game's parameters. The most important one is the return to player. The RTP should be within the regulatory-allowed range. Volatility is another parameter that can also be optimized. A game with a particular RTP can have different volatility levels. Volatility is a user-specific parameter. In high risk-taking societies, high-volatility games perform better. In less risk-taking societies, low-volatility games perform better. To evaluate the internal game model, define a score function (Listing \ref{listing-018}).
+
+\begin{lstlisting}[language=Java, caption={Scoring of the game model}, label=listing-018]
+final class Statistics {
+	...
+
+	long hitFrequency = 0L;
+
+	...
+}
+
+final class Game {
+	...
+
+	private boolean singleFreeSpin(Symbol[][] view, int expanded) {
+		...
+
+		private boolean singleFreeSpin(Symbol[][] view, int expanded) {
+			...
+
+			boolean hit = false;
+
+			...
+
+			if (win > 0) {
+				hit = true;
+
+				...
+			}
+
+			...
+
+			if (state == State.FREE_SPINS_1 && expanded > 0) {
+				...
+				hit |= singleFreeSpin(view, expanded);
+			} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+				...
+				hit |= singleFreeSpin(view, expanded);
+			}
+
+			...
+		}
+
+		...
+
+		return hit;
+	}
+
+
+	private void singleBaseGame(Symbol[][] view) {
+		...
+
+		if (win > 0) {
+			statistics.hitFrequency++;
+			...
+		}
+
+		...
+
+		else if (expanded > 0) {
+			...
+			boolean hit = singleFreeSpin(view, expanded);
+			if (win <= 0 && hit == true) {
+				statistics.hitFrequency++;
+			}
+		}
+
+		...
+	}
+
+	double score() {
+		double rtp = (double) statistics.wonMoney / 
+		(double) statistics.lostMoney;
+		double hitFrequency = (double) statistics.hitFrequency / 
+		(double) statistics.numberOfBaseGameSpins;
+
+		return Math.sqrt(10000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
+				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * 
+				(hitFrequency - HIT_FREQUENCY_TARGET));
+	}
+
+	...
+}
+\end{lstlisting}
+
+The statistics class maintains a long variable named hit frequency, initialized to zero. In the game class, the single free spin method determines whether a win occurred during bonus rounds. A boolean hit flag is initialized to false at the beginning of the evaluation. If a win amount greater than zero is detected, the hit flag is set to true. When specific free spin states are encountered, and the expanded symbol count is greater than zero, the single free spin method is recursively invoked. The boolean result of this recursive invocation is logically combined with the existing hit flag using a bitwise OR assignment. The function then returns the final hit status.
+
+During the execution of a single base game, the initial win amount is evaluated. If a positive win is registered, the hit frequency counter within the statistics object is incremented. If no immediate win is detected but an expanded symbol is present, the single free spin method is invoked. The hit frequency counter is subsequently incremented if the base game win is zero or less and the free spin mechanism successfully reports a hit.
+
+The score method calculates a fitness score to evaluate the slot game's mathematical performance. The actual return-to-player metric is calculated by dividing total won money by total lost money. The overall hit frequency is calculated by dividing the hit frequency counter by the total number of base game spins. The final score is computed by taking the square root of the sum of the squared, scaled deviations of the calculated return-to-player and hit frequency metrics from their predefined target values.
+
 \chapter{Conclusions}
 
 \backmatter
@@ -905,7 +996,19 @@ The authors are a team primarily affiliated with the Institute of Information an
 
 \begin{thebibliography}{99}
 \thispagestyle{empty}
-\bibitem{}
+\bibitem{Parvanov-2021} Parvanov, D., Mateeva, G., Balabanov, T.: Classification of Images for Reverse Engineering of Slot Machines, Abstracts of the 16th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 36-37, 2021, ISSN 1313-3357
+\bibitem{Balabanov-2021a} Balabanov, T.: Volatility Index Estimation by Reverse Engineering, Proceedings of the International Scientific Conference UNITECH, vol. 1, 229-234, 2021, ISSN 1313-230X
+\bibitem{Balabanov-2021b} Balabanov, T.: Estimation of Volatility based on the Estimation of Segmentation, Problems of Engineering Cybernetics and Robotics, vol. 77, 3-10, 2021, ISSN 2738-7356
+\bibitem{Petrov-2020} Petrov, P., Kostadinov, G., Zhivkov, P., Velichkova, V., Balabanov, T.: Approximate Sequencing of Virtual Reels with Genetic Algorithms, Proceedings of the 23rd International Conference on Distributed Computer and Communication Networks: Control, Computation, Communications, 507-514, 2020, ISBN 978-5-91450-248-2
+\bibitem{Tomov-2017a} Tomov, P., Zankinski. I., Balabanov, T.: Slot Machine Reels Reconstruction with Genetic Algorithms, Abstracts of the 12th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 102-103, 2017, ISSN 1313-3357
+\bibitem{Tomov-2017b} Tomov, P., Zankinski. I.., Balabanov, T.: Slot Machine Reels Reconstruction with Monte-Carlo Search, Proceedings of the International Scientific Conference UNITECH, vol. 2, 384-387, 2017, ISSN 1313-230X
+\bibitem{Balabanov-2015} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machine RTP Optimization and Symbols Wins Equalization with Discrete Differential Evolution, Proceedings of the International Conference on Large-Scale Scientific Computing, vol. 9374, 210–217, 2015, ISBN 978-3-319-26519-3
+\bibitem{Balabanov-2014} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machines RTP Optimization with Genetic Algorithms, Proceedings of the International Conference on Numerical Methods and Applications, vol. 8962, 55-61, 2014, ISBN 978-3-319-15584-5
+\bibitem{Keremedchiev-2017} Keremedchiev, D., Tomov, P., Barova, M.: Slot Machine Base Game Evolutionary RTP Optimization, Proceedings of the International Conference on Numerical Analysis and Its Applications, vol. 10187, 406-413, 2017, ISBN 978-3-319-57098-3
+\bibitem{Kamana-2021a} Kamana, P.A., Sifaleras, A., Samaras, N.: Slot Machine RTP Optimization Using Variable Neighborhood Search, Mathematical Problems in Engineering, 8784065, 2021, ISSN 1024-123X
+\bibitem{Kamana-2021b} Kamana, P.A.: Design and Analysis of Slot Machine Games and RTP Optimization Using Variable Neighborhood Search (VNS), Master of Science Thesis, Thessaloniki, 2021
+\bibitem{Balabanov-2025} Balabanov, T.: Secrets of Slot Machine Mathematics Development Revealed, Higher School of Transport - Todor Kableshkov Publishing House, 2025, ISBN 978-954-12-0316-3
+\bibitem{Balabanov-2026} Balabanov, T., Tomov, P., Dimitrov, I.: Practical Design of Slot Machine Math, 2nd edn. Independent publisher, 2026, ISBN 979-8-18232-152-5
 \end{thebibliography}
 
 \end{document}

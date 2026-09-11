@@ -5,6 +5,7 @@ final class Statistics {
 	long wonMoney = 0L;
 	long lostMoney = 0L;
 	long baseMoney = 0L;
+	long hitFrequency = 0L;
 	long baseHitFrequency = 0L;
 	long totalNumberOfBaseGames = 0L;
 	Map<Integer, Long> baseWinHistogram = new HashMap<>();

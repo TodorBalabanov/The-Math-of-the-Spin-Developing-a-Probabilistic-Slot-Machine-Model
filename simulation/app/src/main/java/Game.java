@@ -94,14 +94,16 @@ final class Game {
 		return win;
 	}
 
-	private void singleFreeSpin(Symbol[][] view, int expanded) {
+	private boolean singleFreeSpin(Symbol[][] view, int expanded) {
 		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
 		spin(model.cumulatives.get(state), view);
 		expanded += wildExpansion(view);
 		expanded--;
 
+		boolean hit = false;
 		int win = linesWin(view);
 		if (win > 0) {
+			hit = true;
 			statistics.freeHitFrequency.merge(state, 1L, Long::sum);
 			statistics.freeMoney.merge(state, (long) win, Long::sum);
 			statistics.wonMoney += win;
@@ -111,15 +113,17 @@ final class Game {
 
 		if (state == State.FREE_SPINS_1 && expanded > 0) {
 			state = State.FREE_SPINS_2;
-			singleFreeSpin(view, expanded);
+			hit |= singleFreeSpin(view, expanded);
 		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
 			state = State.FREE_SPINS_3;
-			singleFreeSpin(view, expanded);
+			hit |= singleFreeSpin(view, expanded);
 		} else if (state == State.FREE_SPINS_3 && expanded > 0) {
 			model.valid = false;
 		} else {
 			state = State.BASE_GAME;
 		}
+
+		return hit;
 	}
 
 	private void singleBaseGame(Symbol[][] view) {
@@ -131,6 +135,7 @@ final class Game {
 
 		int win = linesWin(view);
 		if (win > 0) {
+			statistics.hitFrequency++;
 			statistics.baseHitFrequency++;
 			statistics.baseMoney += win;
 			statistics.wonMoney += win;
@@ -142,7 +147,10 @@ final class Game {
 			model.valid = false;
 		} else if (expanded > 0) {
 			state = State.FREE_SPINS_1;
-			singleFreeSpin(view, expanded);
+			boolean hit = singleFreeSpin(view, expanded);
+			if (win <= 0 && hit == true) {
+				statistics.hitFrequency++;
+			}
 		}
 	}
 
@@ -167,5 +175,13 @@ final class Game {
 				break;
 			}
 		}
+	}
+
+	double score() {
+		double rtp = (double) statistics.wonMoney / (double) statistics.lostMoney;
+		double hitFrequency = (double) statistics.hitFrequency / (double) statistics.numberOfBaseGameSpins;
+
+		return Math.sqrt(10000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
+				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * (hitFrequency - HIT_FREQUENCY_TARGET));
 	}
 }

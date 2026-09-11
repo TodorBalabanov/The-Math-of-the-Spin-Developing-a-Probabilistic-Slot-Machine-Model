@@ -5,7 +5,7 @@ public final class Main {
         // System.out.println(game.model);
         // System.out.println(game.statistics);
         System.out.println("RTP: " + (double) game.statistics.wonMoney / (double) game.statistics.lostMoney);
-        System.out.println("Base game hit frequency: "
-                + (double) game.statistics.baseHitFrequency / (double) game.statistics.totalNumberOfBaseGames);
+        System.out.println("Hit Frequency: "
+                + (double) game.statistics.hitFrequency / (double) game.statistics.totalNumberOfBaseGames);
     }
 }
