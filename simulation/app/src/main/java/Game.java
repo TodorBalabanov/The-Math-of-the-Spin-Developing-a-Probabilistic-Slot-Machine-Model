@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -169,9 +171,11 @@ final class Game {
 			singleBaseGame(view);
 
 			if (model.valid == false) {
-				statistics.totalNumberOfBaseGames = 0;
-				statistics.wonMoney = 100;
-				statistics.lostMoney = 1;
+				statistics = new Statistics();
+				statistics.numberOfBaseGameSpins = 1L;
+				statistics.totalNumberOfBaseGames = 1L;
+				statistics.wonMoney = 100L;
+				statistics.lostMoney = 1L;
 				break;
 			}
 		}
@@ -183,5 +187,25 @@ final class Game {
 
 		return Math.sqrt(10000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
 				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * (hitFrequency - HIT_FREQUENCY_TARGET));
+	}
+
+	List<Double> probabilites() {
+		List<Double> probabilities = new ArrayList<>();
+		for (Map<Symbol, Double> reel : model.baseReels.values()) {
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				probabilities.add(entry.getValue());
+			}
+		}
+		return probabilities;
+	}
+
+	void probabilites(List<Double> probabilities) {
+		int index = 0;
+		for (Map<Symbol, Double> reel : model.baseReels.values()) {
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				entry.setValue(probabilities.get(index++));
+			}
+		}
+		model.normalize();
 	}
 }

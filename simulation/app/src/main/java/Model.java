@@ -67,6 +67,12 @@ final class Model {
 		}
 	}
 
+	void normalize() {
+		for (int i = 0; i < baseReels.size(); i++) {
+			normalize(baseReels.get(i), baseCumulatives.get(i));
+		}
+	}
+
 	Model() {
 		for (int i = 0; i < 5; i++) {
 			HashMap<Symbol, Double> probability;

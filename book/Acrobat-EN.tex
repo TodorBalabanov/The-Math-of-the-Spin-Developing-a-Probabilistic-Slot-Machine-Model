@@ -796,9 +796,11 @@ final class Game {
 			singleBaseGame(view);
 
 			if (model.valid == false) {
-				statistics.totalNumberOfBaseGames = 0;
-				statistics.wonMoney = 100;
-				statistics.lostMoney = 1;
+				statistics = new Statistics();
+				statistics.numberOfBaseGameSpins = 1L;
+				statistics.totalNumberOfBaseGames = 1L;
+				statistics.wonMoney = 100L;
+				statistics.lostMoney = 1L;
 				break;
 			}
 		}
@@ -893,11 +895,64 @@ The system then calculates the total win amount across all paylines. If the winn
 
 Finally, the current game state and the remaining expanded count are evaluated to determine the subsequent game phase. If the current state is the first free spins mode and the expanded count is greater than zero, the game state is transitioned to the second free spins mode, and another free spin is initiated. Similarly, if the state is already the second free spins mode and the expanded count remains greater than zero, the state is advanced to the third free spins mode, triggering another free spin. If the state is the third free spins mode and the expanded count is still greater than zero, the mathematical model is flagged as invalid. If no further expansions remain to trigger additional free spins, the game state is reverted entirely to the base game mode.
 
-\chapter{Game Optimization}
+\chapter{Optimizing the Model}
 
-Optimizing gambling slot games involves achieving desired values for some of the game's parameters. The most important one is the return to player. The RTP should be within the regulatory-allowed range. Volatility is another parameter that can also be optimized. A game with a particular RTP can have different volatility levels. Volatility is a user-specific parameter. In high risk-taking societies, high-volatility games perform better. In less risk-taking societies, low-volatility games perform better. To evaluate the internal game model, define a score function (Listing \ref{listing-018}).
+The initial game model uses only a single probability matrix. It applies to the base game and the free spin modes. Each symbol in the matrix has an equal chance of appearing in each cell where it can land. Wilds, for example, are not allowed in the first and last reels. Running the game with these parameters gives an RTP of around 9981\% and a hit frequency of around 78.67\%. Having such a model is useless. The desired values are an RTP of around 96\% and a hit frequency of around 22\%.
 
-\begin{lstlisting}[language=Java, caption={Scoring of the game model}, label=listing-018]
+\section{Model Score}
+
+The best way to use a global optimizer is to represent the probability matrix as a double list (Listing \ref{listing-018}). Getting the values is straightforward, but setting them requires normalization.
+
+\begin{lstlisting}[language=Java, caption={Handling probability matrix}, label=listing-018]
+final class Model {
+	...
+
+	void normalize() {
+		for (int i = 0; i < baseReels.size(); i++) {
+			normalize(baseReels.get(i), baseCumulatives.get(i));
+		}
+	}
+
+	...
+}
+
+final class Game {
+	...
+
+	List<Double> probabilites() {
+		List<Double> probabilities = new ArrayList<>();
+		for (Map<Symbol, Double> reel : model.baseReels.values()) {
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				probabilities.add(entry.getValue());
+			}
+		}
+		return probabilities;
+	}
+
+	void probabilites(List<Double> probabilities) {
+		int index = 0;
+		for (Map<Symbol, Double> reel : model.baseReels.values()) {
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				entry.setValue(probabilities.get(index++));
+			}
+		}
+		model.normalize();
+	}
+
+
+	...
+}
+\end{lstlisting}
+
+The model class defines a normalization procedure. An iteration is performed across the size of the base reels collection, during which an overloaded normalization function is invoked for each reel alongside its corresponding cumulative data structure.
+
+Within the game class, a retrieval method for probabilities is implemented. A list of double-precision values is instantiated. The model's base reels are traversed sequentially, and each probability value is extracted and appended to the new list. The method then returns the fully populated list of probabilities.
+
+A corresponding method for applying new probabilities is also provided. A numerical index is initialized to zero. The underlying symbol entries within the base reels are systematically accessed, and each existing value is replaced by the corresponding probability extracted from the provided list based on the current index. After the sequence of value assignments completes, the model's normalization procedure is invoked.
+
+Optimizing gambling slot games involves achieving desired values for some of the game's parameters. The most important one is the return to player. The RTP should be within the regulatory-allowed range. Volatility is another parameter that can also be optimized. A game with a particular RTP can have different volatility levels. Volatility is a user-specific parameter. In high risk-taking societies, high-volatility games perform better. In less risk-taking societies, low-volatility games perform better. To evaluate the internal game model, define a score function (Listing \ref{listing-019}).
+
+\begin{lstlisting}[language=Java, caption={Scoring of the game model}, label=listing-019]
 final class Statistics {
 	...
 
@@ -986,6 +1041,8 @@ During the execution of a single base game, the initial win amount is evaluated.
 
 The score method calculates a fitness score to evaluate the slot game's mathematical performance. The actual return-to-player metric is calculated by dividing total won money by total lost money. The overall hit frequency is calculated by dividing the hit frequency counter by the total number of base game spins. The final score is computed by taking the square root of the sum of the squared, scaled deviations of the calculated return-to-player and hit frequency metrics from their predefined target values.
 
+\section{Genetic Algorithm}
+
 \chapter{Conclusions}
 
 \backmatter
@@ -996,15 +1053,15 @@ The authors are a team primarily affiliated with the Institute of Information an
 
 \begin{thebibliography}{99}
 \thispagestyle{empty}
+\bibitem{Balabanov-2014} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machines RTP Optimization with Genetic Algorithms, Proceedings of the International Conference on Numerical Methods and Applications, vol. 8962, 55-61, 2014, ISBN 978-3-319-15584-5
+\bibitem{Balabanov-2015} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machine RTP Optimization and Symbols Wins Equalization with Discrete Differential Evolution, Proceedings of the International Conference on Large-Scale Scientific Computing, vol. 9374, 210–217, 2015, ISBN 978-3-319-26519-3
+\bibitem{Keremedchiev-2017} Keremedchiev, D., Tomov, P., Barova, M.: Slot Machine Base Game Evolutionary RTP Optimization, Proceedings of the International Conference on Numerical Analysis and Its Applications, vol. 10187, 406-413, 2017, ISBN 978-3-319-57098-3
+\bibitem{Tomov-2017a} Tomov, P., Zankinski. I., Balabanov, T.: Slot Machine Reels Reconstruction with Genetic Algorithms, Abstracts of the 12th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 102-103, 2017, ISSN 1313-3357
+\bibitem{Tomov-2017b} Tomov, P., Zankinski. I.., Balabanov, T.: Slot Machine Reels Reconstruction with Monte-Carlo Search, Proceedings of the International Scientific Conference UNITECH, vol. 2, 384-387, 2017, ISSN 1313-230X
+\bibitem{Petrov-2020} Petrov, P., Kostadinov, G., Zhivkov, P., Velichkova, V., Balabanov, T.: Approximate Sequencing of Virtual Reels with Genetic Algorithms, Proceedings of the 23rd International Conference on Distributed Computer and Communication Networks: Control, Computation, Communications, 507-514, 2020, ISBN 978-5-91450-248-2
 \bibitem{Parvanov-2021} Parvanov, D., Mateeva, G., Balabanov, T.: Classification of Images for Reverse Engineering of Slot Machines, Abstracts of the 16th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 36-37, 2021, ISSN 1313-3357
 \bibitem{Balabanov-2021a} Balabanov, T.: Volatility Index Estimation by Reverse Engineering, Proceedings of the International Scientific Conference UNITECH, vol. 1, 229-234, 2021, ISSN 1313-230X
 \bibitem{Balabanov-2021b} Balabanov, T.: Estimation of Volatility based on the Estimation of Segmentation, Problems of Engineering Cybernetics and Robotics, vol. 77, 3-10, 2021, ISSN 2738-7356
-\bibitem{Petrov-2020} Petrov, P., Kostadinov, G., Zhivkov, P., Velichkova, V., Balabanov, T.: Approximate Sequencing of Virtual Reels with Genetic Algorithms, Proceedings of the 23rd International Conference on Distributed Computer and Communication Networks: Control, Computation, Communications, 507-514, 2020, ISBN 978-5-91450-248-2
-\bibitem{Tomov-2017a} Tomov, P., Zankinski. I., Balabanov, T.: Slot Machine Reels Reconstruction with Genetic Algorithms, Abstracts of the 12th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 102-103, 2017, ISSN 1313-3357
-\bibitem{Tomov-2017b} Tomov, P., Zankinski. I.., Balabanov, T.: Slot Machine Reels Reconstruction with Monte-Carlo Search, Proceedings of the International Scientific Conference UNITECH, vol. 2, 384-387, 2017, ISSN 1313-230X
-\bibitem{Balabanov-2015} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machine RTP Optimization and Symbols Wins Equalization with Discrete Differential Evolution, Proceedings of the International Conference on Large-Scale Scientific Computing, vol. 9374, 210–217, 2015, ISBN 978-3-319-26519-3
-\bibitem{Balabanov-2014} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machines RTP Optimization with Genetic Algorithms, Proceedings of the International Conference on Numerical Methods and Applications, vol. 8962, 55-61, 2014, ISBN 978-3-319-15584-5
-\bibitem{Keremedchiev-2017} Keremedchiev, D., Tomov, P., Barova, M.: Slot Machine Base Game Evolutionary RTP Optimization, Proceedings of the International Conference on Numerical Analysis and Its Applications, vol. 10187, 406-413, 2017, ISBN 978-3-319-57098-3
 \bibitem{Kamana-2021a} Kamana, P.A., Sifaleras, A., Samaras, N.: Slot Machine RTP Optimization Using Variable Neighborhood Search, Mathematical Problems in Engineering, 8784065, 2021, ISSN 1024-123X
 \bibitem{Kamana-2021b} Kamana, P.A.: Design and Analysis of Slot Machine Games and RTP Optimization Using Variable Neighborhood Search (VNS), Master of Science Thesis, Thessaloniki, 2021
 \bibitem{Balabanov-2025} Balabanov, T.: Secrets of Slot Machine Mathematics Development Revealed, Higher School of Transport - Todor Kableshkov Publishing House, 2025, ISBN 978-954-12-0316-3
