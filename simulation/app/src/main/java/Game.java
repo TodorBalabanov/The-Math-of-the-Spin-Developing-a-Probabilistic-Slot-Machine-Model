@@ -1,5 +1,4 @@
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -20,6 +19,10 @@ final class Game {
 	private void spin(Map<Integer, Map<Symbol, Double>> cumulatives, Symbol[][] view) {
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
+				if (state != State.BASE_GAME && view[i][j] == Symbol.WILD) {
+					continue;
+				}
+
 				double randomValue = PRNG.nextDouble();
 				Map<Symbol, Double> cumulative = cumulatives.get(i);
 				for (Map.Entry<Symbol, Double> entry : cumulative.entrySet()) {
@@ -30,6 +33,22 @@ final class Game {
 				}
 			}
 		}
+	}
+
+	private int wildExpansion(Symbol[][] view) {
+		int expanded = 0;
+		for (int i = 0; i < view.length; i++) {
+			for (int j = 0; j < view[i].length; j++) {
+				if (view[i][j] == Symbol.WILD) {
+					for (int k = 0; k < view[i].length; k++) {
+						view[i][k] = Symbol.WILD;
+					}
+					expanded++;
+					break;
+				}
+			}
+		}
+		return expanded;
 	}
 
 	private int lineWin(Symbol[] line) {
@@ -52,8 +71,7 @@ final class Game {
 	}
 
 	private int linesWin(Symbol[][] view) {
-		int win1 = 0;
-		int win2 = 0;
+		int win = 0;
 		Symbol[] line1 = { null, null, null, null, null };
 		Symbol[] line2 = { null, null, null, null, null };
 		for (int l = 0; l < Model.LINES.length; l++) {
@@ -64,11 +82,11 @@ final class Game {
 				line2[j] = view[i][index2];
 			}
 
-			win1 += lineWin(line1);
-			win2 += lineWin(line2);
+			win += lineWin(line1);
+			win += lineWin(line2);
 		}
 
-		return win1 + win2;
+		return win;
 	}
 
 	public void simulate() {
@@ -80,7 +98,9 @@ final class Game {
 				{ null, null, null },
 		};
 
+		state = State.BASE_GAME;
 		spin(model.baseCumulatives, view);
+		wildExpansion(view);
 		System.out.println(linesWin(view));
 		System.out.println(
 				Arrays.deepToString(view).replace("], [", "],\n [").replace("[", "").replace("]", "").replace(" ", "")
