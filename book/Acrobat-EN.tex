@@ -919,7 +919,7 @@ final class Model {
 final class Game {
 	...
 
-	List<Double> probabilites() {
+	List<Double> probabilities() {
 		List<Double> probabilities = new ArrayList<>();
 		for (Map<Symbol, Double> reel : model.baseReels.values()) {
 			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
@@ -929,7 +929,7 @@ final class Game {
 		return probabilities;
 	}
 
-	void probabilites(List<Double> probabilities) {
+	void probabilities(List<Double> probabilities) {
 		int index = 0;
 		for (Map<Symbol, Double> reel : model.baseReels.values()) {
 			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
@@ -938,7 +938,6 @@ final class Game {
 		}
 		model.normalize();
 	}
-
 
 	...
 }
@@ -1042,6 +1041,50 @@ During the execution of a single base game, the initial win amount is evaluated.
 The score method calculates a fitness score to evaluate the slot game's mathematical performance. The actual return-to-player metric is calculated by dividing total won money by total lost money. The overall hit frequency is calculated by dividing the hit frequency counter by the total number of base game spins. The final score is computed by taking the square root of the sum of the squared, scaled deviations of the calculated return-to-player and hit frequency metrics from their predefined target values.
 
 \section{Genetic Algorithm}
+
+Because the Wild symbol is not allowed in the first and last reels, the optimizer can easily suggest an invalid solution. An efficient way is to fix the suggested solution while loading the numbers into the game's model (Listing \ref{listing-020}).
+
+\begin{lstlisting}[language=Java, caption={Fix internal game model}, label=listing-020]
+final class Model {
+	...
+
+	void validate() {
+		for (int i = 0; i < baseReels.size(); i++) {
+			Map<Symbol, Double> reel = baseReels.get(i);
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				if (i != 0 && i != 4) {
+					continue;
+				}
+				if (entry.getKey() != Symbol.WILD) {
+					continue;
+				}
+
+				entry.setValue(0D);
+			}
+		}
+
+		valid = true;
+	}
+
+	...
+}
+
+final class Game {
+	...
+
+	void probabilities(List<Double> probabilities) {
+		...
+		
+		model.validate();
+		
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+The validation procedure for the mathematical model is invoked within the probabilities method of the Game class. The code iterates by index across the collection of base reels. During this process, it evaluates the symbol mappings within each reel. Modifications are explicitly restricted to the first and fifth reels, which correspond to index zero and index four. Whenever a wild symbol is encountered on these specific reels, its associated numerical value is overridden to zero. After this reel evaluation, the model marks the state as valid.
 
 \chapter{Conclusions}
 

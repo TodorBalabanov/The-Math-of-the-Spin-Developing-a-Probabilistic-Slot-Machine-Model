@@ -189,7 +189,7 @@ final class Game {
 				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * (hitFrequency - HIT_FREQUENCY_TARGET));
 	}
 
-	List<Double> probabilites() {
+	List<Double> probabilities() {
 		List<Double> probabilities = new ArrayList<>();
 		for (Map<Symbol, Double> reel : model.baseReels.values()) {
 			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
@@ -199,13 +199,14 @@ final class Game {
 		return probabilities;
 	}
 
-	void probabilites(List<Double> probabilities) {
+	void probabilities(List<Double> probabilities) {
 		int index = 0;
 		for (Map<Symbol, Double> reel : model.baseReels.values()) {
 			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
 				entry.setValue(probabilities.get(index++));
 			}
 		}
+		model.validate();
 		model.normalize();
 	}
 }

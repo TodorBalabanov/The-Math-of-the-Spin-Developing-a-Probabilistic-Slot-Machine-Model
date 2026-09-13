@@ -51,6 +51,24 @@ final class Model {
 
 	Map<Symbol, List<Integer>> payTable = new HashMap<>();
 
+	void validate() {
+		for (int i = 0; i < baseReels.size(); i++) {
+			Map<Symbol, Double> reel = baseReels.get(i);
+			for (Map.Entry<Symbol, Double> entry : reel.entrySet()) {
+				if (i != 0 && i != 4) {
+					continue;
+				}
+				if (entry.getKey() != Symbol.WILD) {
+					continue;
+				}
+
+				entry.setValue(0D);
+			}
+		}
+
+		valid = true;
+	}
+
 	void normalize(Map<Symbol, Double> probability, Map<Symbol, Double> cumulative) {
 		double sum = 0D;
 		for (Map.Entry<Symbol, Double> entry : probability.entrySet()) {
