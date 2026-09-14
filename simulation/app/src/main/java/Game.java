@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -185,7 +186,7 @@ final class Game {
 		double rtp = (double) statistics.wonMoney / (double) statistics.lostMoney;
 		double hitFrequency = (double) statistics.hitFrequency / (double) statistics.numberOfBaseGameSpins;
 
-		return Math.sqrt(10000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
+		return Math.sqrt(100000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
 				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * (hitFrequency - HIT_FREQUENCY_TARGET));
 	}
 

@@ -5,12 +5,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import io.jenetics.DoubleChromosome;
 import io.jenetics.DoubleGene;
+import io.jenetics.EliteSelector;
 import io.jenetics.Genotype;
 import io.jenetics.Mutator;
 import io.jenetics.Optimize;
 import io.jenetics.UniformCrossover;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
+import io.jenetics.engine.EvolutionStatistics;
+import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 
 public final class Main {
@@ -18,7 +21,9 @@ public final class Main {
 
     static final int POPULATION_SIZE = 53;
 
-    static final int NUMBER_OF_GENERATIONS = 100;
+    static final int NUMBER_OF_GENERATIONS = 300;
+
+    static final double STOP_THRESHOLD = 0.01D;
 
     private static double evaluation(Genotype<DoubleGene> genotype) {
         Game game = new Game();
@@ -49,18 +54,21 @@ public final class Main {
         Engine<DoubleGene, Double> engine = Engine.builder(Main::evaluation, factory)
                 .populationSize(POPULATION_SIZE)
                 .optimize(Optimize.MINIMUM)
-                // .survivorsFraction(0.05)
-                // .survivorsSelector(new EliteSelector<>())
+                .survivorsFraction(0.05)
+                .survivorsSelector(new EliteSelector<>())
                 .alterers(
                         new UniformCrossover<>(0.5),
                         new Mutator<>(0.05))
                 .build();
 
-        Genotype<DoubleGene> result = engine.stream().limit(NUMBER_OF_GENERATIONS).peek(intermediate -> {
-            System.out.println(LocalTime.now() + "\t" +
-                    intermediate.generation() + "\t" +
-                    intermediate.bestFitness());
-        }).collect(EvolutionResult.toBestGenotype());
+        final EvolutionStatistics<Double, ?> statistics = EvolutionStatistics.ofNumber();
+
+        Genotype<DoubleGene> result = engine.stream().limit(Limits.byFitnessThreshold(STOP_THRESHOLD))
+                .limit(NUMBER_OF_GENERATIONS).peek(intermediate -> {
+                    System.out.println(LocalTime.now() + "\t" +
+                            intermediate.generation() + "\t" +
+                            intermediate.bestFitness());
+                }).peek(statistics).collect(EvolutionResult.toBestGenotype());
 
         DoubleChromosome chromosome = result.chromosome().as(DoubleChromosome.class);
         for (int i = 0; i < probabilities.size(); i++) {
@@ -70,8 +78,9 @@ public final class Main {
         game.probabilities(probabilities);
         game.simulate();
 
-        // System.out.println(game.model);
-        // System.out.println(game.statistics);
+        System.out.println(statistics);
+        System.out.println(game.model);
+        System.out.println(game.statistics);
         System.out.println("RTP: " + (double) game.statistics.wonMoney / (double) game.statistics.lostMoney);
         System.out.println("Hit Frequency: "
                 + (double) game.statistics.hitFrequency / (double) game.statistics.totalNumberOfBaseGames);

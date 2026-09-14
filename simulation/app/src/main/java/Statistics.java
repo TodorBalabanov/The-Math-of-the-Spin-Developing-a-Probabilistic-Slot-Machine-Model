@@ -1,4 +1,4 @@
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class Statistics {
@@ -8,11 +8,11 @@ final class Statistics {
 	long hitFrequency = 0L;
 	long baseHitFrequency = 0L;
 	long totalNumberOfBaseGames = 0L;
-	Map<Integer, Long> baseWinHistogram = new HashMap<>();
-	Map<State, Long> freeMoney = new HashMap<>();
-	Map<State, Long> freeHitFrequency = new HashMap<>();
-	Map<State, Long> totalNumberOfFreeGames = new HashMap<>();
-	Map<State, Map<Integer, Long>> freeWinHistograms = new HashMap<>();
+	Map<Integer, Long> baseWinHistogram = new LinkedHashMap<>();
+	Map<State, Long> freeMoney = new LinkedHashMap<>();
+	Map<State, Long> freeHitFrequency = new LinkedHashMap<>();
+	Map<State, Long> totalNumberOfFreeGames = new LinkedHashMap<>();
+	Map<State, Map<Integer, Long>> freeWinHistograms = new LinkedHashMap<>();
 	long numberOfBaseGameSpins = 1_000_000L;
 
 	Statistics() {
@@ -28,9 +28,9 @@ final class Statistics {
 		totalNumberOfFreeGames.put(State.FREE_SPINS_2, 0L);
 		totalNumberOfFreeGames.put(State.FREE_SPINS_3, 0L);
 
-		freeWinHistograms.put(State.FREE_SPINS_1, new HashMap<>());
-		freeWinHistograms.put(State.FREE_SPINS_2, new HashMap<>());
-		freeWinHistograms.put(State.FREE_SPINS_3, new HashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_1, new LinkedHashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_2, new LinkedHashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_3, new LinkedHashMap<>());
 	}
 
 	@Override

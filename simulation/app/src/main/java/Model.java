@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +29,7 @@ final class Model {
 
 	boolean valid = true;
 
-	Map<Integer, Map<Symbol, Double>> baseReels = new HashMap<>();
+	Map<Integer, Map<Symbol, Double>> baseReels = new LinkedHashMap<>();
 
 	Map<Integer, Map<Symbol, Double>> free1Reels = baseReels;
 
@@ -37,7 +37,7 @@ final class Model {
 
 	Map<Integer, Map<Symbol, Double>> free3Reels = baseReels;
 
-	Map<Integer, Map<Symbol, Double>> baseCumulatives = new HashMap<>();
+	Map<Integer, Map<Symbol, Double>> baseCumulatives = new LinkedHashMap<>();
 
 	Map<Integer, Map<Symbol, Double>> free1Cumulatives = baseCumulatives;
 
@@ -45,11 +45,11 @@ final class Model {
 
 	Map<Integer, Map<Symbol, Double>> free3Cumulatives = baseCumulatives;
 
-	Map<State, Map<Integer, Map<Symbol, Double>>> reels = new HashMap<>();
+	Map<State, Map<Integer, Map<Symbol, Double>>> reels = new LinkedHashMap<>();
 
-	Map<State, Map<Integer, Map<Symbol, Double>>> cumulatives = new HashMap<>();
+	Map<State, Map<Integer, Map<Symbol, Double>>> cumulatives = new LinkedHashMap<>();
 
-	Map<Symbol, List<Integer>> payTable = new HashMap<>();
+	Map<Symbol, List<Integer>> payTable = new LinkedHashMap<>();
 
 	void validate() {
 		for (int i = 0; i < baseReels.size(); i++) {
@@ -75,6 +75,11 @@ final class Model {
 			sum += entry.getValue();
 		}
 
+		if (sum == 0D) {
+			valid = false;
+			sum = 1D;
+		}
+
 		cumulative.clear();
 		double cumulativeValue = 0D;
 		for (Map.Entry<Symbol, Double> entry : probability.entrySet()) {
@@ -93,10 +98,10 @@ final class Model {
 
 	Model() {
 		for (int i = 0; i < 5; i++) {
-			HashMap<Symbol, Double> probability;
-			baseReels.put(i, probability = new HashMap<>());
-			HashMap<Symbol, Double> cumulative;
-			baseCumulatives.put(i, cumulative = new HashMap<>());
+			LinkedHashMap<Symbol, Double> probability;
+			baseReels.put(i, probability = new LinkedHashMap<>());
+			LinkedHashMap<Symbol, Double> cumulative;
+			baseCumulatives.put(i, cumulative = new LinkedHashMap<>());
 
 			Symbol[] symbols = Symbol.values();
 			for (int j = 0; j < symbols.length; j++) {

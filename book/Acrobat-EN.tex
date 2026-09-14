@@ -130,7 +130,7 @@ Printed by request
 \clearpage
 
 \tableofcontents
-%\listoffigures
+\listoffigures
 \listoftables
 \lstlistoflistings
 
@@ -211,7 +211,7 @@ The game targets a theoretical return to player of roughly 96.1 percent, with a 
 
 A total wager of 20 is evenly divided across ten fixed paylines, resulting in a stake of two being placed on each line. The game grid is structured upon five reels and three rows, across which the ten invisible paylines are permanently traced. Winning combinations are evaluated in two directions by the game engine; identical symbols are matched consecutively from the leftmost reel to the right, as well as from the rightmost reel to the left. If a five-of-a-kind combination is achieved across the entire screen, the system pays it twice, as the unbroken sequence is independently validated from both the left and right boundaries simultaneously.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{lcccccc}
 \hline
@@ -236,7 +236,7 @@ Two classic casino motifs generate the premium payouts. The Symbol 02 pays 50, 1
 
 During these wins, the three center reels are often influenced by the Wild symbol. When this substitute is presented on the second, third, or fourth reel, the expanding Wild covers the entire column, and a complementary re-spin is automatically initiated. All active paylines are subsequently re-evaluated by the game, allowing additional combinations to be completed from either side of the screen. At the same time, the expanded wilds are held firmly in place.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{cc}
 \begin{tabular}{|c|c|c|c|c|}
@@ -416,7 +416,7 @@ The modeling starts from representing symbols in the game (Listing \ref{listing-
 The collected statistics are handled in groups of variables (Listing \ref{listing-004}). The separate class is not intended to be the state-of-the-art OOP design. This class is intended only to provide variables as data containers. This research does not apply OOP principles because this writing is illustrative, and the emphasis is not on software development best practices. Initially, only basic statistics will be collected. As the modeling process advances, other statistics could be added as single-symbol hit frequencies.
 
 \begin{lstlisting}[language=Java, caption={Statistics container}, label=listing-004]
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 class Statistics {
@@ -425,11 +425,11 @@ class Statistics {
 	long baseMoney = 0L;
 	long baseHitFrequency = 0L;
 	long totalNumberOfBaseGames = 0L;
-	Map<Integer, Long> baseWinHistogram = new HashMap<>();
-	Map<State, Long> freeMoney = new HashMap<>();
-	Map<State, Long> freeHitFrequency = new HashMap<>();
-	Map<State, Long> totalNumberOfFreeGames = new HashMap<>();
-	Map<State, Map<Integer, Long>> freeWinHistograms = new HashMap<>();
+	Map<Integer, Long> baseWinHistogram = new LinkedHashMap<>();
+	Map<State, Long> freeMoney = new LinkedHashMap<>();
+	Map<State, Long> freeHitFrequency = new LinkedHashMap<>();
+	Map<State, Long> totalNumberOfFreeGames = new LinkedHashMap<>();
+	Map<State, Map<Integer, Long>> freeWinHistograms = new LinkedHashMap<>();
 	long numberOfBaseGameSpins = 1_000_000L;
 
 	Statistics() {
@@ -445,9 +445,9 @@ class Statistics {
 		totalNumberOfFreeGames.put(State.FREE_SPINS_2, 0L);
 		totalNumberOfFreeGames.put(State.FREE_SPINS_3, 0L);
 
-		freeWinHistograms.put(State.FREE_SPINS_1, new HashMap<>());
-		freeWinHistograms.put(State.FREE_SPINS_2, new HashMap<>());
-		freeWinHistograms.put(State.FREE_SPINS_3, new HashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_1, new LinkedHashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_2, new LinkedHashMap<>());
+		freeWinHistograms.put(State.FREE_SPINS_3, new LinkedHashMap<>());
 	}
 }
 \end{lstlisting}
@@ -460,7 +460,7 @@ The game's internal model consists of a paytable, paylines, and symbols distribu
 
 \begin{lstlisting}[language=Java, caption={Predetermined values}, label=listing-006]
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -501,7 +501,7 @@ A paytable represented as a 2D array is an old-fashioned approach to modeling pr
 final class Model {
 	...
 
-	Map<Symbol, List<Integer>> payTable = new HashMap<>();
+	Map<Symbol, List<Integer>> payTable = new LinkedHashMap<>();
 
 	Model() {
 		...
@@ -520,7 +520,7 @@ final class Model {
 }
 \end{lstlisting}
 
-A member variable named payTable is declared as a Map and instantiated as a HashMap, designed to associate each Symbol with a List of Integer values. In the Model class constructor, this structure is initialized. An array comprising all enumerated Symbol values is first retrieved. Next, a primary loop iterates over each element in this array. During each iteration, a new ArrayList designated as payouts is instantiated. A nested loop is then initiated to traverse the rows of the previously defined PRIZES matrix. In this inner loop, the payout amount for the current symbol index and combination length is extracted and appended to the payouts list. After the nested loop completes, the fully populated payouts list is inserted into the payTable map, using the respective symbol as the mapping key.
+A member variable named payTable is declared as a Map and instantiated as a LinkedHashMap, designed to associate each Symbol with a List of Integer values. In the Model class constructor, this structure is initialized. An array comprising all enumerated Symbol values is first retrieved. Next, a primary loop iterates over each element in this array. During each iteration, a new ArrayList designated as payouts is instantiated. A nested loop is then initiated to traverse the rows of the previously defined PRIZES matrix. In this inner loop, the payout amount for the current symbol index and combination length is extracted and appended to the payouts list. After the nested loop completes, the fully populated payouts list is inserted into the payTable map, using the respective symbol as the mapping key.
 
 Because the paytable and the paylines are fixed by design, the only flexible part of the game model is the reels. The model can be invalid if Wild symbols appear on the first or last reel (Listing \ref{listing-008}). As a key difference in the proposed model, the reels are not presented as a discrete probability distribution in a 2D array. Instead, each symbol will be presented with its own probability of appearing on each of the 5 reels. With this design, the length of the virtual reels does not need to be decided. An undesired effect of this design is that particular symbol patterns will not appear as they do in the regular slot machines developed with strips of symbols. For the initial experiments, a single probability matrix will be used for each of the four game states.
 
@@ -530,7 +530,7 @@ final class Model {
 
 	boolean valid = true;
 
-	Map<Integer, Map<Symbol, Double>> baseReels = new HashMap<>();
+	Map<Integer, Map<Symbol, Double>> baseReels = new LinkedHashMap<>();
 
 	Map<Integer, Map<Symbol, Double>> free1Reels = baseReels;
 
@@ -542,8 +542,8 @@ final class Model {
 		...
 
 		for (int i = 0; i < 5; i++) {
-			HashMap<Symbol, Double> reel;
-			baseReels.put(i, reel = new HashMap<>());
+			LinkedHashMap<Symbol, Double> reel;
+			baseReels.put(i, reel = new LinkedHashMap<>());
 			Symbol[] symbols = Symbol.values();
 			for (int j = 0; j < symbols.length; j++) {
 				if ((i == 0 || i == 4) && symbols[j] == 
@@ -561,9 +561,9 @@ final class Model {
 }
 \end{lstlisting}
 
-A boolean variable named valid is declared and initialized to true. A nested map data structure named baseReels is instantiated as a HashMap to store the probability weights of symbols for each reel. Subsequently, three additional map variables named free1Reels, free2Reels, and free3Reels are declared and directly assigned the reference of baseReels, establishing that the base game reel configurations are applied by default during the various free spin features.
+A boolean variable named valid is declared and initialized to true. A nested map data structure named baseReels is instantiated as a LinkedHashMap to store the probability weights of symbols for each reel. Subsequently, three additional map variables named free1Reels, free2Reels, and free3Reels are declared and directly assigned the reference of baseReels, establishing that the base game reel configurations are applied by default during the various free spin features.
 
-In the constructor, a primary loop runs five times to process the configuration for each of the five reels. In each iteration, a new HashMap designated as reel is instantiated and inserted into the baseReels collection, using the current loop index as the mapping key. The array of enumerated Symbol values is then retrieved, and a secondary loop is initiated to iterate through each symbol. Conditional logic is evaluated within this secondary loop to determine the initial weight assigned to each symbol on the current reel. If the evaluated symbol is identified as a Wild symbol and the current reel index corresponds to either the first or the fifth reel, a double value of zero is assigned, effectively preventing the wild symbol from being placed on the outer reels. For all other symbols and reel positions, a default double value of one is assigned and inserted into the reel map. After all symbols for the current reel have been processed, a function named normalize is invoked on the reel map, ensuring that the raw numerical weights are mathematically converted into a proper probability distribution (Listing \ref{listing-009}). 
+In the constructor, a primary loop runs five times to process the configuration for each of the five reels. In each iteration, a new LinkedHashMap designated as reel is instantiated and inserted into the baseReels collection, using the current loop index as the mapping key. The array of enumerated Symbol values is then retrieved, and a secondary loop is initiated to iterate through each symbol. Conditional logic is evaluated within this secondary loop to determine the initial weight assigned to each symbol on the current reel. If the evaluated symbol is identified as a Wild symbol and the current reel index corresponds to either the first or the fifth reel, a double value of zero is assigned, effectively preventing the wild symbol from being placed on the outer reels. For all other symbols and reel positions, a default double value of one is assigned and inserted into the reel map. After all symbols for the current reel have been processed, a function named normalize is invoked on the reel map, ensuring that the raw numerical weights are mathematically converted into a proper probability distribution (Listing \ref{listing-009}). 
 
 Initially, all symbols will have an equal probability of appearing. Only the Wild symbol is restricted on the first and last reels. During the optimization process, the probabilities will be changed by the Genetic Algorithm, so the values should be normalized. The total sum of the probabilities should be one.
 
@@ -593,7 +593,7 @@ Using direct probabilities in gameplay is inefficient. It is better to calculate
 final class Model {
 	...
 
-	Map<Integer, Map<Symbol, Double>> baseCumulatives = new HashMap<>();
+	Map<Integer, Map<Symbol, Double>> baseCumulatives = new LinkedHashMap<>();
 
 	Map<Integer, Map<Symbol, Double>> free1Cumulatives = baseCumulatives;
 
@@ -1074,9 +1074,9 @@ final class Game {
 
 	void probabilities(List<Double> probabilities) {
 		...
-		
+
 		model.validate();
-		
+
 		...
 	}
 
@@ -1085,6 +1085,48 @@ final class Game {
 \end{lstlisting}
 
 The validation procedure for the mathematical model is invoked within the probabilities method of the Game class. The code iterates by index across the collection of base reels. During this process, it evaluates the symbol mappings within each reel. Modifications are explicitly restricted to the first and fifth reels, which correspond to index zero and index four. Whenever a wild symbol is encountered on these specific reels, its associated numerical value is overridden to zero. After this reel evaluation, the model marks the state as valid.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-001}
+  \caption{Genetic algorithm convergence}
+  \label{image-001}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-002}
+  \caption{Heat map of the reels probability}
+  \label{image-002}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-003}
+  \caption{Base game prizes distribution}
+  \label{image-003}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-004}
+  \caption{First free spin prizes distribution}
+  \label{image-004}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-005}
+  \caption{Second free spin prizes distribution}
+  \label{image-005}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{image-006}
+  \caption{Third free spin prizes distribution}
+  \label{image-006}
+\end{figure}
 
 \chapter{Conclusions}
 
