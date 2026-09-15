@@ -62,7 +62,6 @@ public final class Main {
                 .build();
 
         final EvolutionStatistics<Double, ?> statistics = EvolutionStatistics.ofNumber();
-
         Genotype<DoubleGene> result = engine.stream().limit(Limits.byFitnessThreshold(STOP_THRESHOLD))
                 .limit(NUMBER_OF_GENERATIONS).peek(intermediate -> {
                     System.out.println(LocalTime.now() + "\t" +
@@ -74,7 +73,6 @@ public final class Main {
         for (int i = 0; i < probabilities.size(); i++) {
             probabilities.set(i, chromosome.get(i).doubleValue());
         }
-
         game.probabilities(probabilities);
         game.simulate();
 

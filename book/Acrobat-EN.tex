@@ -1086,12 +1086,191 @@ final class Game {
 
 The validation procedure for the mathematical model is invoked within the probabilities method of the Game class. The code iterates by index across the collection of base reels. During this process, it evaluates the symbol mappings within each reel. Modifications are explicitly restricted to the first and fifth reels, which correspond to index zero and index four. Whenever a wild symbol is encountered on these specific reels, its associated numerical value is overridden to zero. After this reel evaluation, the model marks the state as valid.
 
+The values of the probability matrix for the base game reels map perfectly to a double-valued vector in genetic algorithms. Different approaches exist for implementing global optimization. Methods such as Differential Evolution, Evolutionary Strategy, Particle Swarm Optimization, and others can be applied. In this paper, we will use a Genetic Algorithm. Having a double vector in the variable space is a perfect candidate for Differential Evolution, but the selected third-party software library does not support it. This means we can either develop the optimizer in-house or use a third-party software library. The book focuses on slot mathematical models, not metaheuristic optimization. An in-house optimizer will not be developed, but the external library Jenetics will be used. The Genetic Algorithm supplied by Jenetics will be controlled with three parameters (Listing \ref{listing-021}).
+
+\begin{lstlisting}[language=Java, caption={Optimization parameters}, label=listing-021]
+public final class Main {
+    ...
+
+    static final int POPULATION_SIZE = 53;
+
+    static final int NUMBER_OF_GENERATIONS = 300;
+
+    static final double STOP_THRESHOLD = 0.01D;
+
+    ...
+}
+\end{lstlisting}
+
+The main execution class is a final structure that defines several core evolutionary parameters for the slot game math simulation as static constants. The size of the genetic algorithm's population is set to fifty-three individuals, which dictates the number of reel configurations evaluated in each evolutionary cycle. The total duration of the evolutionary process is constrained by a generation limit, which is specified as three hundred iterations. A stopping threshold is set at 0.01. The Jenetics engine typically utilizes this convergence threshold to halt the execution prematurely if the population's fitness stabilizes and no further significant optimization is observed across successive generations.
+
+The most important and time-consuming part of GA-based optimization is calculating the fitness value. The steps for running genetic algorithms are well studied and refined. The weak spot is calculating the quality of the proposed solutions. In this work, fitness calculation is done using a time-consuming Monte Carlo simulation. The Jenetics software library requires solutions to be evaluated using a specific fitness function (Listing \ref{listing-022}).
+
+\begin{lstlisting}[language=Java, caption={Game reels goodness evaluation}, label=listing-022]
+public final class Main {
+	...
+
+    private static double evaluation(Genotype<DoubleGene> genotype) {
+        Game game = new Game();
+
+        List<Double> probabilities = game.probabilities();
+        DoubleChromosome chromosome = genotype.chromosome().
+        as(DoubleChromosome.class);
+        for (int i = 0; i < probabilities.size(); i++) {
+            probabilities.set(i, chromosome.get(i).doubleValue());
+        }
+
+        game.probabilities(probabilities);
+        game.simulate();
+
+        if (game.model.valid == false) {
+            return Integer.MAX_VALUE;
+        }
+
+        return game.score();
+    }
+
+	...
+}
+\end{lstlisting}
+
+An evaluation method calculates the fitness of a given genotype containing double genes. A fresh game instance is created to serve as the evaluation environment. The baseline probabilities are retrieved from the game instance. The chromosome is subsequently extracted from the genotype and cast as a double chromosome. The probabilities list is updated iteratively, replacing each original probability value with the corresponding numeric value in the chromosome's genes. After the list is completely populated with the newly generated genetic data, the updated probabilities are assigned back to the game instance. The system then runs a full mathematical simulation of the slot game using these parameters. Following the simulation phase, the structural validity of the game model is verified. If the mathematical model is evaluated as invalid, the maximum possible integer value is returned to impose a severe fitness penalty on the flawed configuration. Otherwise, the final game score is evaluated and returned to the evolutionary algorithm engine as the genotype's definitive fitness value.
+
+Candidate solutions inside the Genetic Algorithm are double values. Because the values represent probabilities, they range from 0 to 1. Jenetics requires a solution factory to run the evolutionary process (Listing \ref{listing-023}).
+
+\begin{lstlisting}[language=Java, caption={Random solutions generation}, label=listing-023]
+public final class Main {
+	...
+
+    public static void main(String[] args) {
+        Game game = new Game();
+
+        List<Double> probabilities = game.probabilities();
+        Factory<Genotype<DoubleGene>> factory = Genotype.of(
+                DoubleChromosome.of(0D, 1D, probabilities.size()));
+
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+Optimization starts when a new instance of the game is instantiated. The baseline probability list is extracted from the game to determine the required sequence length. A genotype factory is subsequently constructed for the evolutionary engine. This factory is configured to generate genotypes containing a double chromosome. The numeric bounds for the genes within this chromosome are constrained between a minimum of zero and a maximum of one. Furthermore, the chromosome's total length is strictly set to match the size of the previously retrieved probabilities list. After that, an optimization setup is performed (Listing \ref{listing-024}).
+
+\begin{lstlisting}[language=Java, caption={Optimization engine setup}, label=listing-024]
+public final class Main {
+	...
+
+    public static void main(String[] args) {
+		...
+
+        Engine<DoubleGene, Double> engine = Engine.builder(Main::evaluation, factory)
+                .populationSize(POPULATION_SIZE)
+                .optimize(Optimize.MINIMUM)
+                .survivorsFraction(0.05)
+                .survivorsSelector(new EliteSelector<>())
+                .alterers(
+                        new UniformCrossover<>(0.5),
+                        new Mutator<>(0.05))
+                .build();
+
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+An evolutionary engine is constructed to manage the genetic algorithm using the library's builder pattern. The builder is initialized with an evaluation method from the main class and a genotype factory. A predetermined population size sets the overall scale of each generation. The optimization objective is defined by configuring the engine to seek a minimum value of the evaluation function. Survival constraints are then established. A fraction of five percent is specified, meaning only the top twentieth of the current population carries over to the next generation. This carryover is managed when an elite selector is used as the survivor selection mechanism, ensuring that the fittest reel configurations are strictly preserved. To maintain genetic diversity, evolutionary operators are introduced into the process. A uniform crossover mechanism is implemented with a fifty percent probability, determining how genetic information is combined between parent configurations. Additionally, a mutation operator is applied with a five percent probability, allowing for random variations to be injected into the genetic sequence. Finally, the configuration process is concluded and the engine is built, leaving the genetic algorithm ready for execution (Listing \ref{listing-025}).
+
+\begin{lstlisting}[language=Java, caption={Performing the optimization}, label=listing-025]
+public final class Main {
+	...
+
+    public static void main(String[] args) {
+		...
+
+        final EvolutionStatistics<Double, ?> statistics = EvolutionStatistics.
+        ofNumber();
+        Genotype<DoubleGene> result = engine.stream().limit(Limits.
+        byFitnessThreshold(STOP_THRESHOLD))
+                .limit(NUMBER_OF_GENERATIONS).peek(intermediate -> {
+                    System.out.println(LocalTime.now() + "\t" +
+                            intermediate.generation() + "\t" +
+                            intermediate.bestFitness());
+                }).peek(statistics).collect(EvolutionResult.toBestGenotype());
+
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+An evolution statistics object is initially instantiated to track and compile numerical data throughout the algorithm's execution. The evolutionary process itself is set in motion by converting the previously configured engine into a continuous stream of generations. To prevent infinite execution, the stream is constrained by two distinct termination conditions. First, a fitness threshold limit is applied, ensuring that the evolutionary loop is halted as soon as a candidate configuration achieves a predefined stopping threshold. Second, a hard cap is imposed by limiting the overall number of generations that can be evaluated. As these generations are processed, an inspection operation intercepts the stream to enable real-time monitoring. During this step, the current local time, the generation sequence number, and the best fitness score for that generation are extracted and printed to standard output for observation. A subsequent inspection operation is then utilized so that the intermediate generational data is absorbed and aggregated by the statistics tracking object. Finally, the terminal operation executes when the stream is collected, extracting the best genotype across all evaluated generations and permanently assigning it to the result variable for future use in the slot game math model (Listing \ref{listing-026}).
+
+\begin{lstlisting}[language=Java, caption={Simulate the result of the optimization}, label=listing-026]
+public final class Main {
+	...
+
+    public static void main(String[] args) {
+		...
+
+        DoubleChromosome chromosome = result.chromosome().
+        as(DoubleChromosome.class);
+        for (int i = 0; i < probabilities.size(); i++) {
+            probabilities.set(i, chromosome.get(i).doubleValue());
+        }
+        game.probabilities(probabilities);
+        game.simulate();
+
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+The optimal chromosome is extracted from the resulting genotype and is explicitly cast as a double chromosome object. A sequential iteration is then performed across the bounds of the existing probabilities list. During this iterative process, each element within the list is systematically updated. The new value is retrieved from the corresponding gene in the optimized chromosome and converted to a standard double-precision numerical format. Once the entire collection of probabilities has been populated with these newly optimized genetic values, the updated list is applied directly to the slot game object. Finally, the system triggers a full game simulation to analyze the mathematical performance of the newly generated reel configuration (Listing \ref{listing-027}).
+
+\begin{lstlisting}[language=Java, caption={Report the final solution}, label=listing-027]
+public final class Main {
+	...
+
+    public static void main(String[] args) {
+		...
+
+        System.out.println(statistics);
+        System.out.println(game.model);
+        System.out.println(game.statistics);
+        System.out.println("RTP: " + (double) game.statistics.wonMoney / 
+        (double) game.statistics.lostMoney);
+        System.out.println("Hit Frequency: "
+                + (double) game.statistics.hitFrequency / 
+                (double) game.statistics.totalNumberOfBaseGames);
+
+		...
+	}
+
+	...
+}
+\end{lstlisting}
+
+The previously aggregated evolution statistics are printed to the standard output so that the overall performance of the genetic algorithm can be reviewed. Next, the internal mathematical model of the slot game is displayed, followed immediately by the detailed statistical results generated during the recent simulation run. The Return to Player, commonly referred to as RTP, is then calculated and output. This crucial financial metric is derived by dividing the total amount won by the total amount lost, with both integer values explicitly cast to double-precision numbers to ensure mathematical accuracy. Finally, the code computes and displays the simulated game's hit frequency. This evaluation metric is determined by dividing the total recorded number of winning hits by the total number of base games executed, again using double-precision casting before presenting the final ratio to the console.
+
+\section{Results Interpretation}
+
+It is possible to model the game with four matrices (the base game and three free spin modes), but this research will stop at a single matrix applied across all four game modes. The required target parameters are the RTP and the hit frequency. With only two objectives, one matrix can meet the constraints. With more requirements, such as specific symbol hit rates or specific free spins hit rates, more than one matrix would be necessary. Such models are left for the reader to experiment with on their own. Figure \ref{image-001} shows the optimization convergence.
+
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{image-001}
   \caption{Genetic algorithm convergence}
   \label{image-001}
 \end{figure}
+
+The graph illustrates the convergence of the optimization process, plotting the fitness value trajectory over approximately twenty-seven minutes of execution. The evaluation metric is represented on the vertical axis, while elapsed computational time, measured in minutes and seconds, is displayed along the horizontal axis. High initial fitness values near fourteen appear at the start of execution around thirteen seconds, indicating an unoptimized starting population. A rapid reduction is observed within the first three minutes as the fitness value drops to approximately eight. This drop is followed by a short stabilization period before a subsequent decline is triggered around four minutes, bringing the metric down to roughly six. The metric then plateaus between five and seven minutes, after which it drops steeply around the eight-minute mark. By nine minutes of execution time, the fitness value is reduced to near zero, reflecting a high degree of optimization within the evolved reel configurations. For the remainder of the run, up to twenty-seven minutes, the curve stays at this minimal level, confirming convergence and that no further significant parameter adjustments are required. The process ends with a suggested reels matrix solution (Figure \ref{image-002}).
 
 \begin{figure}[htbp]
   \centering
@@ -1100,12 +1279,18 @@ The validation procedure for the mathematical model is invoked within the probab
   \label{image-002}
 \end{figure}
 
+On the first reel, designated as reel zero, the wild symbol is excluded, while symbol six is the most frequent at about 28.5\%. The second reel, reel one, shows a fairly balanced distribution, with symbol five generated most often at roughly 20.2\%, and a minor wild symbol presence of slightly over one percent. The third reel, reel two, is heavily weighted toward symbol two, which has a dominant probability of over thirty-three percent. In comparison, the Wild symbol probability drops to a negligible 0.1\%. On the fourth reel (reel three), symbol four is prioritized at 20.4\%, and Wild symbol generation is similarly minimized to about 0.2\%. Finally, on the fifth reel (reel four), the Wild symbol is again removed from the mathematical configuration.
+
+In contrast, symbols three, four, and six are distributed with nearly equal high frequencies around 21\%. Across the entire reel matrix, the optimization algorithm heavily restricts winning combinations linked to the Wild symbol. In contrast, specific standard symbols are distinctly favored on individual reels to achieve the targeted game volatility and mathematical return metrics. The probability matrix most strongly influences the distribution of base game prizes (Figure \ref{image-003}).
+
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{image-003}
   \caption{Base game prizes distribution}
   \label{image-003}
 \end{figure}
+
+The dataset representing the base game wins distribution shows a stark right-skewed curve. The highest overall frequency is predictably dominated by zero-value outcomes, which are recorded exactly 783,433 times during the simulation run. This massive concentration of non-winning spins heavily suggests a highly volatile game model. When the optimized reels generate winning combinations, the payout amounts cluster predominantly in the lowest possible tiers. Win values of ten, fourteen, twenty, and one hundred are awarded tens of thousands of times, representing the most common source of returned funds to the player. Hit frequency decays exponentially as payout values increase. Mid-tier wins ranging from two hundred to eight hundred credits are registered much more sparsely, with occurrences dropping steeply into the low thousands or mere hundreds. The extreme rarity of the highest recorded payouts ultimately confirms the mathematical variance of the genetic configuration. Significant wins exceeding two thousand credits are rarely awarded, and the absolute maximum win of 3,890 credits is triggered only once across the entire aggregated simulation dataset. Although the probability matrix is the same for the first free spin, stacked Wilds affect the prizes on the first spin (Figure \ref{image-004}).
 
 \begin{figure}[htbp]
   \centering
@@ -1114,12 +1299,16 @@ The validation procedure for the mathematical model is invoked within the probab
   \label{image-004}
 \end{figure}
 
+The dataset representing prize distribution during the initial free spin shows a strong concentration of zero-value outcomes. A non-winning result occurs exactly 12,711 times, indicating that mathematical volatility persists even within the bonus feature. When the game engine awards prizes, low-to-medium tier payouts are most common. A win value of one hundred is the most frequent positive outcome, registered 3,410 times. Other low-tier payout amounts, such as ten, twenty, and fifty, are also commonly awarded, with frequencies recorded between roughly 2,400 and 2,600 occurrences. As prize value increases, hit frequency declines steadily. Mid-level payouts ranging from two hundred to five hundred credits are awarded with moderate rarity, as occurrences drop from nearly one thousand down to a few hundred. The optimized genetic configuration tightly restricts the highest potential returns. Prizes exceeding one thousand credits are rarely triggered, and the absolute peak payout of 4,000 credits is achieved just a single time across the entire free spin simulation dataset. Although the probability matrix is the same for the second free spin, stacked Wilds in two reels affect the prizes on the second spin (Figure \ref{image-005}).
+
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{image-005}
   \caption{Second free spin prizes distribution}
   \label{image-005}
 \end{figure}
+
+The prize distribution generated during the second free spin has a significantly smaller sample size, driven by the lower probability of reaching this secondary bonus stage. Within this smaller dataset, zero-value outcomes again have the highest frequency, recorded exactly ninety-three times. When the simulation triggers monetary prizes, a strong clustering around specific low- and mid-tier values is observed. The most frequent positive payouts are forty, two hundred forty, and one hundred twenty, registered forty-seven, forty, and thirty-seven times, respectively. A notable frequency is also maintained for specific mid-range wins, with a four hundred credit prize being generated thirty times. As the monetary magnitude of the awards increases, the optimized mathematical model strictly enforces a consistent decay in hit frequency. High-value prizes exceeding one thousand credits are distributed very sparsely, and the absolute maximum win of four thousand five hundred forty credits is achieved only a single time during the simulation. Ultimately, a high degree of mathematical volatility is preserved within this secondary feature, as the majority of awarded funds are concentrated within the lower payout brackets while peak returns are heavily restricted. Although the probability matrix is the same for the third free spin, stacked Wilds across three reels affect the prizes on that spin (Figure \ref{image-006}).
 
 \begin{figure}[htbp]
   \centering
@@ -1128,13 +1317,35 @@ The validation procedure for the mathematical model is invoked within the probab
   \label{image-006}
 \end{figure}
 
+An extremely small sample size of only twelve total occurrences is captured in the dataset representing the third free spin. This scarcity suggests a highly improbable event, indicating that the tertiary bonus stage is rarely reached in the mathematical simulation. Unlike the distributions observed in the earlier bonus stages, zero-value outcomes are completely excluded from this specific dataset. Instead, every successfully triggered spin awards a mid-to-high tier monetary prize, and each discrete payout amount is recorded exactly once. The minimum payout threshold is set at five hundred fifty credits, while the absolute maximum win is three thousand four hundred sixty credits. A heavy concentration of high-value payouts exceeding one thousand credits is ultimately observed, confirming that this deeply nested bonus feature mathematically guarantees a substantial return to offset the extreme rarity of its activation.
+
+A comprehensive analysis of the simulated slot game model reveals a highly volatile mathematical framework. The base game is characterized by an extremely high frequency of non-winning spins, resulting in a low overall hit frequency during standard play. When payouts are successfully triggered, player balances are primarily sustained by heavily clustered low-tier rewards. At the same time, optimized, wild-deficient reel configurations strictly limit significant base-game returns. This intense variance is mathematically extended into the primary bonus features. A similar high-volatility pattern continues through the first and second free spin stages, where zero-value outcomes remain prevalent, and peak prizes are rarely awarded despite the elevated potential.
+
+The mathematical performance of the deepest bonus tiers ultimately confirms a deeply back-loaded reward structure. While the tertiary free spin stage is practically excluded from standard gameplay due to its extreme statistical rarity, guaranteed high-value returns are strictly enforced by the model whenever this stage is successfully reached. Consequently, the optimized genetic configuration is definitively classified as a high-risk, high-reward system. Long periods of baseline mathematical attrition are purposely designed into the simulation, which are intended to be occasionally offset by highly improbable but intensely lucrative bonus feature triggers.
+
 \chapter{Conclusions}
+
+The modern casino relies entirely on the invisible architecture of applied mathematics and computational probability. This book has shown that moving from traditional virtual reel strips to a direct symbol probability matrix offers a flexible, modern approach to slot machine design. By detaching the mathematical engine from the legacy constraints of fixed reel lengths, designers can directly manipulate the foundational variables that dictate both the casino's liability and the player's experience.
+
+Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1% Return to Player and a 22.6% hit frequency, the evolutionary engine successfully navigated a massive combinatoric space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
+
+The interpreted data reveals that optimizing a single probability matrix across all game states naturally engineered a high-risk, high-reward mathematical profile. The optimized model relies heavily on a massive concentration of zero-value spins and clustered, low-tier payouts during standard play. The multi-state expanding wild re-spin feature is statistically rare, with the tertiary free spin stage being exceptionally difficult to reach. When players do reach the deepest bonus levels, they are mathematically guaranteed substantial returns, which offset the long periods of base-game attrition.
+
+Ultimately, the marriage of object-oriented Monte Carlo simulations and genetic optimization empowers applied mathematicians to move beyond tedious manual spreadsheet adjustments. This computational methodology provides a robust, automated pathway to achieving exact financial targets while crafting compelling, highly volatile game profiles.
 
 \backmatter
 
 \chapter*{About the Authors}
 \thispagestyle{empty}
 The authors are a team primarily affiliated with the Institute of Information and Communication Technologies, part of the Bulgarian Academy of Sciences.
+
+\clearpage
+\begingroup
+\makeatletter
+\let\ps@plain\ps@empty
+\makeatother
+
+\pagestyle{empty}
 
 \begin{thebibliography}{99}
 \thispagestyle{empty}
