@@ -112,7 +112,7 @@ All rights reserved. No portion of this book may be reproduced in any form witho
 \vspace*{0.25in}
 ISBN: 979-81-7455-469-6 (print)
 
-Printed by request
+Printed on demand
 \clearpage
 
 \tableofcontents
@@ -302,7 +302,7 @@ There are 10 fixed lines, but they are evaluated in two directions, making the g
 
 \chapter{Modeling the Game}
 
-There are many ways to model a gambling slot machine, but one of the most efficient is to use Java. Java is well-known and widely accepted. Many third-party software libraries and frameworks are available. For optimization, this development will use a third-party framework based on genetic algorithms.
+There are many ways to model a gambling slot machine, but current research uses Java because it is widely available and has a mature ecosystem. Many third-party software libraries and frameworks are available. For optimization, this development will use a third-party framework based on genetic algorithms.
 
 \begin{lstlisting}[language=Java, caption={Console application single entry point}, label=listing-001]
 public class Main {
@@ -314,11 +314,8 @@ public class Main {
 Most efforts in mathematical modeling of the game focus on Monte Carlo simulation. Such a simulation can be implemented efficiently in a single console application (Listing \ref{listing-001}). A public class designated in the provided source code defines Main. Within this structure, the main method serves as the standard entry point for executing the Java application. This method accepts an array of string arguments to accommodate potential command-line inputs. Because the method body is empty, no operations are performed, no data is processed, and the program terminates immediately upon execution.
 
 \begin{lstlisting}[language=Java, caption={Game simulation class}, label=listing-003]
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
 final class Game {
-	private static final Random PRNG = ThreadLocalRandom.current();
+	private static final Random PRNG = new SecureRandom();
 
 	static final double RTP_TARGET = 0.961;
 
@@ -330,7 +327,7 @@ final class Game {
 }
 \end{lstlisting}
 
-The game initially includes an internal model representation, a statistical collection structure, and predefined constants (Listing \ref{listing-003}). The provided source code defines a class named SlotGame as the foundational structure for a slot machine simulation. Within this class, a static, unmodifiable pseudorandom number generator is initialized using the current thread-local context to facilitate concurrent randomization operations. A constant double-precision value, designated as the target return-to-player percentage, is established at 0.961 to govern the expected mathematical payout of the game system. Furthermore, public instances of a Model class and a Statistics class are instantiated as fields within the object so the application can actively manage and track internal game mechanics and ongoing gameplay metrics.
+The game initially includes an internal model representation, a statistical collection structure, and predefined constants (Listing \ref{listing-003}). The provided source code defines a class named Game as the foundational structure for a slot machine simulation. Within this class, a static, unmodifiable pseudorandom number generator is initialized using the current thread-local context to facilitate concurrent randomization operations. A constant double-precision value, designated as the target return-to-player percentage, is established at 0.961 to govern the expected mathematical payout of the game system. Furthermore, public instances of a Model class and a Statistics class are instantiated as fields within the object so the application can actively manage and track internal game mechanics and ongoing gameplay metrics.
 
 \begin{lstlisting}[language=Java, caption={Internal game states}, label=listing-005]
 enum State {
@@ -353,9 +350,6 @@ By game definition, gameplay can go through 4 different states (Listing \ref{lis
 \section{Prize Symbols}
 
 \begin{lstlisting}[language=Java, caption={Prize symbols}, label=listing-002]
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
 enum Symbol {
 	WILD(0, "Wild"),
 	SYMBOL01(1, "Symbol01"),
@@ -366,7 +360,7 @@ enum Symbol {
 	SYMBOL06(6, "Symbol06"),
 	SYMBOL07(7, "Symbol07");
 
-	private static final Random PRNG = ThreadLocalRandom.current();
+	private static final Random PRNG = new SecureRandom();
 
 	private final int index;
 	private final String caption;
@@ -395,7 +389,7 @@ enum Symbol {
 }
 \end{lstlisting}
 
-The modeling starts from representing symbols in the game (Listing \ref{listing-002}). Within this framework, a enumeration named Symbol represents the distinct faces of a slot reel. Eight specific constants, consisting of a wild card and seven standard symbols, are established by this enumeration. An integer index and a string caption are assigned to each symbol upon instantiation by a private constructor. Concurrently, a pseudorandom number generator is initialized using a thread-local instance and retained as a static final variable. This generator is then used by a static method that randomly selects and returns one of the available symbols from the enumeration array. Getter methods provide access to the index and caption fields. Finally, the default string conversion method is overridden so that the descriptive caption is returned whenever the application requests a text representation of the symbol.
+The modeling starts from representing symbols in the game (Listing \ref{listing-002}). Within this framework, an enumeration named Symbol represents the distinct faces of a slot reel. Eight specific constants, consisting of a wild card and seven standard symbols, are established by this enumeration. An integer index and a string caption are assigned to each symbol upon instantiation by a private constructor. Concurrently, a pseudorandom number generator is initialized using a thread-local instance and retained as a static final variable. This generator is then used by a static method that randomly selects and returns one of the available symbols from the enumeration array. Getter methods provide access to the index and caption fields. Finally, the default string conversion method is overridden so that the descriptive caption is returned whenever the application requests a text representation of the symbol.
 
 \section{Collected Statistics}
 
@@ -1072,7 +1066,7 @@ final class Game {
 
 The validation procedure for the mathematical model is invoked within the probabilities method of the Game class. The code iterates by index across the collection of base reels. During this process, it evaluates the symbol mappings within each reel. Modifications are explicitly restricted to the first and fifth reels, which correspond to index zero and index four. Whenever a wild symbol is encountered on these specific reels, its associated numerical value is overridden to zero. After this reel evaluation, the model marks the state as valid.
 
-The values of the probability matrix for the base game reels map perfectly to a double-valued vector in genetic algorithms. Different approaches exist for implementing global optimization. Methods such as Differential Evolution, Evolutionary Strategy, Particle Swarm Optimization, and others can be applied. In this paper, we will use a Genetic Algorithm. Having a double vector in the variable space is a perfect candidate for Differential Evolution, but the selected third-party software library does not support it. This means we can either develop the optimizer in-house or use a third-party software library. The book focuses on slot mathematical models, not metaheuristic optimization. An in-house optimizer will not be developed, but the external library Jenetics will be used. The Genetic Algorithm supplied by Jenetics will be controlled with three parameters (Listing \ref{listing-021}).
+The values of the probability matrix for the base game reels map perfectly to a double-valued vector in genetic algorithms. Different approaches exist for implementing global optimization. Methods such as Differential Evolution, Evolutionary Strategy, Particle Swarm Optimization, and others can be applied. In this book, Genetic Algorithm will be used. Having a double vector in the variable space is a perfect candidate for Differential Evolution, but the selected third-party software library does not support it. This means we can either develop the optimizer in-house or use a third-party software library. The book focuses on slot mathematical models, not metaheuristic optimization. An in-house optimizer will not be developed, but the external library Jenetics will be used. The Genetic Algorithm supplied by Jenetics will be controlled with three parameters (Listing \ref{listing-021}).
 
 \begin{lstlisting}[language=Java, caption={Optimization parameters}, label=listing-021]
 public final class Main {
@@ -1313,11 +1307,11 @@ The mathematical performance of the deepest bonus tiers ultimately confirms a de
 
 The modern casino relies entirely on the invisible architecture of applied mathematics and computational probability. This book has shown that moving from traditional virtual reel strips to a direct symbol probability matrix offers a flexible, modern approach to slot machine design. By detaching the mathematical engine from the legacy constraints of fixed reel lengths, designers can directly manipulate the foundational variables that dictate both the casino's liability and the player's experience.
 
-Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1\% Return to Player and a 22.6\% hit frequency, the evolutionary engine successfully navigated a massive combinatoric space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
+Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1\% Return to Player and a 22.6\% hit frequency, the evolutionary engine successfully navigated a high-dimensional continuous search space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
 
 The interpreted data reveals that optimizing a single probability matrix across all game states naturally engineered a high-risk, high-reward mathematical profile. The optimized model relies heavily on a massive concentration of zero-value spins and clustered, low-tier payouts during standard play. The multi-state expanding wild re-spin feature is statistically rare, with the tertiary free spin stage being exceptionally difficult to reach. When players do reach the deepest bonus levels, they are mathematically guaranteed substantial returns, which offset the long periods of base-game attrition.
 
-Ultimately, the marriage of object-oriented Monte Carlo simulations and genetic optimization empowers applied mathematicians to move beyond tedious manual spreadsheet adjustments. This computational methodology provides a robust, automated pathway to achieving exact financial targets while crafting compelling, highly volatile game profiles.
+Ultimately, the marriage of object-oriented Monte Carlo simulations and genetic optimization empowers applied mathematicians to move beyond tedious manual spreadsheet adjustments. This computational methodology provides a robust, automated pathway to tuning simulated metrics close to target values while crafting compelling, highly volatile game profiles.
 
 \backmatter
 

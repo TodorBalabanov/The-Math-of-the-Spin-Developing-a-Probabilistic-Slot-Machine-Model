@@ -1,7 +1,7 @@
+import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 import io.jenetics.DoubleChromosome;
 import io.jenetics.DoubleGene;
@@ -17,7 +17,7 @@ import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 
 public final class Main {
-    static final Random PRNG = ThreadLocalRandom.current();
+    static final Random PRNG = new SecureRandom();
 
     static final int POPULATION_SIZE = 53;
 

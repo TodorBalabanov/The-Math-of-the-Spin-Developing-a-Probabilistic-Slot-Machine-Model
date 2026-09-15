@@ -1,12 +1,11 @@
+import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 final class Game {
-	private static final Random PRNG = ThreadLocalRandom.current();
+	private static final Random PRNG = new SecureRandom();
 
 	static final double RTP_TARGET = 0.961;
 

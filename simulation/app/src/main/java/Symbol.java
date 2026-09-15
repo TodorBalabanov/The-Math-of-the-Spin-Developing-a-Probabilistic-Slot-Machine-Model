@@ -1,5 +1,5 @@
+import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 enum Symbol {
 	WILD(0, "Wild"),
@@ -11,7 +11,7 @@ enum Symbol {
 	SYMBOL06(6, "Symbol06"),
 	SYMBOL07(7, "Symbol07");
 
-	private static final Random PRNG = ThreadLocalRandom.current();
+	private static final Random PRNG = new SecureRandom();
 
 	private final int index;
 	private final String caption;
