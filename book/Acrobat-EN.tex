@@ -40,20 +40,6 @@
   \renewcommand{\headrulewidth}{0pt}
 }
 
-\lstset{
-    basicstyle=\ttfamily\tiny,
-    keywordstyle=\color{blue},
-    backgroundcolor=\color{gray!10},
-    commentstyle=\color{green!60!black},
-    stringstyle=\color{orange},
-    numbers=left,
-    numberstyle=\tiny,
-    breaklines=true,
-    breakatwhitespace=false,
-    breakindent=0pt,
-    frame=single
-}
-
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\chaptername}{}
 
@@ -812,7 +798,7 @@ final class Game {
 
 The simulation begins by creating an empty symbol grid, represented as a two-dimensional array with five columns and three rows, initially filled with null values. A loop is subsequently executed to iterate through a predetermined total number of base game spins. In each step of the simulation loop, the wager is processed by increasing the total lost money statistic by twice the total number of configured paylines.
 
-Following this deduction, a single iteration of the base game is executed using the designated symbol grid. After the game resolves, the mathematical model is checked to ensure it remains valid. If the model is flagged as invalid, the standard simulation flow is interrupted. If the model is invalid, the primary statistical trackers are manually overridden: the total number of base games is reset to zero, the total won money is set to one hundred, and the total lost money is set to one. After applying these statistical overrides, the simulation loop terminates immediately.
+Following this deduction, a single iteration of the base game is executed using the designated symbol grid. After the game resolves, the mathematical model is checked to ensure it remains valid. If the model is flagged as invalid, the standard simulation flow is interrupted. If the model is invalid, the primary statistical trackers are manually overridden: the total number of base games is reset to one, the total won money is set to one hundred, and the total lost money is set to one. After applying these statistical overrides, the simulation loop terminates immediately.
 
 \begin{lstlisting}[language=Java, caption={Single base game}, label=listing-016]
 final class Game {
@@ -966,30 +952,27 @@ final class Game {
 	private boolean singleFreeSpin(Symbol[][] view, int expanded) {
 		...
 
-		private boolean singleFreeSpin(Symbol[][] view, int expanded) {
-			...
 
-			boolean hit = false;
+		boolean hit = false;
 
-			...
+		...
 
-			if (win > 0) {
-				hit = true;
-
-				...
-			}
+		if (win > 0) {
+			hit = true;
 
 			...
+		}
 
-			if (state == State.FREE_SPINS_1 && expanded > 0) {
-				...
+		...
+
+		if (state == State.FREE_SPINS_1 && expanded > 0) {
+			...
+
+			hit |= singleFreeSpin(view, expanded);
+		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			...
+
 				hit |= singleFreeSpin(view, expanded);
-			} else if (state == State.FREE_SPINS_2 && expanded > 0) {
-				...
-				hit |= singleFreeSpin(view, expanded);
-			}
-
-			...
 		}
 
 		...
@@ -1001,8 +984,10 @@ final class Game {
 	private void singleBaseGame(Symbol[][] view) {
 		...
 
+
 		if (win > 0) {
 			statistics.hitFrequency++;
+
 			...
 		}
 
@@ -1010,6 +995,7 @@ final class Game {
 
 		else if (expanded > 0) {
 			...
+
 			boolean hit = singleFreeSpin(view, expanded);
 			if (win <= 0 && hit == true) {
 				statistics.hitFrequency++;
@@ -1327,7 +1313,7 @@ The mathematical performance of the deepest bonus tiers ultimately confirms a de
 
 The modern casino relies entirely on the invisible architecture of applied mathematics and computational probability. This book has shown that moving from traditional virtual reel strips to a direct symbol probability matrix offers a flexible, modern approach to slot machine design. By detaching the mathematical engine from the legacy constraints of fixed reel lengths, designers can directly manipulate the foundational variables that dictate both the casino's liability and the player's experience.
 
-Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1% Return to Player and a 22.6% hit frequency, the evolutionary engine successfully navigated a massive combinatoric space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
+Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1\% Return to Player and a 22.6\% hit frequency, the evolutionary engine successfully navigated a massive combinatoric space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
 
 The interpreted data reveals that optimizing a single probability matrix across all game states naturally engineered a high-risk, high-reward mathematical profile. The optimized model relies heavily on a massive concentration of zero-value spins and clustered, low-tier payouts during standard play. The multi-state expanding wild re-spin feature is statistically rare, with the tertiary free spin stage being exceptionally difficult to reach. When players do reach the deepest bonus levels, they are mathematically guaranteed substantial returns, which offset the long periods of base-game attrition.
 
