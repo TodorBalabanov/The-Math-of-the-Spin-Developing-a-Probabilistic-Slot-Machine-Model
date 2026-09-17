@@ -17,6 +17,8 @@ final class Game {
 
 	State state = State.BASE_GAME;
 
+	List<State> bonus = new ArrayList<>();
+
 	private void spin(Map<Integer, Map<Symbol, Double>> cumulatives, Symbol[][] view) {
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
@@ -36,26 +38,46 @@ final class Game {
 		}
 	}
 
-	private int wildExpansion(Symbol[][] view) {
-		int expanded = 0;
+	private void wildExpansion(Symbol[][] view) {
+		int wildColumns = 0;
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
 				if (view[i][j] == Symbol.WILD) {
-					int substitutions = 0;
+					wildColumns++;
 					for (int k = 0; k < view[i].length; k++) {
-						if (view[i][k] != Symbol.WILD) {
-							substitutions++;
-						}
 						view[i][k] = Symbol.WILD;
-					}
-					if (substitutions > 0) {
-						expanded++;
 					}
 					break;
 				}
 			}
 		}
-		return expanded;
+		if (wildColumns > 3) {
+			model.valid = false;
+		} else if (state == State.BASE_GAME && wildColumns == 1) {
+			bonus.add(State.FREE_SPINS_1);
+		} else if (state == State.BASE_GAME && wildColumns == 2) {
+			bonus.add(State.FREE_SPINS_1);
+			bonus.add(State.FREE_SPINS_2);
+		} else if (state == State.BASE_GAME && wildColumns == 3) {
+			bonus.add(State.FREE_SPINS_1);
+			bonus.add(State.FREE_SPINS_2);
+			bonus.add(State.FREE_SPINS_3);
+		} else if (state == State.FREE_SPINS_1 && wildColumns == 2) {
+			if (bonus.contains(State.FREE_SPINS_2) == false) {
+				bonus.add(State.FREE_SPINS_2);
+			}
+		} else if (state == State.FREE_SPINS_1 && wildColumns == 3) {
+			if (bonus.contains(State.FREE_SPINS_2) == false) {
+				bonus.add(State.FREE_SPINS_2);
+			}
+			if (bonus.contains(State.FREE_SPINS_3) == false) {
+				bonus.add(State.FREE_SPINS_3);
+			}
+		} else if (state == State.FREE_SPINS_2 && wildColumns == 3) {
+			if (bonus.contains(State.FREE_SPINS_3) == false) {
+				bonus.add(State.FREE_SPINS_3);
+			}
+		}
 	}
 
 	private int lineWin(Symbol[] line) {
@@ -83,10 +105,8 @@ final class Game {
 		Symbol[] line2 = { null, null, null, null, null };
 		for (int l = 0; l < Model.LINES.length; l++) {
 			for (int i = 0, j = line2.length - 1; i < line1.length && j >= 0; i++, j--) {
-				int index1 = Model.LINES[l][i];
-				int index2 = Model.LINES[l][j];
-				line1[i] = view[i][index1];
-				line2[j] = view[i][index2];
+				int k = Model.LINES[l][i];
+				line1[i] = line2[j] = view[i][k];
 			}
 
 			win += lineWin(line1);
@@ -96,11 +116,10 @@ final class Game {
 		return win;
 	}
 
-	private boolean singleFreeSpin(Symbol[][] view, int expanded) {
+	private boolean singleFreeSpin(Symbol[][] view) {
 		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
 		spin(model.cumulatives.get(state), view);
-		expanded += wildExpansion(view);
-		expanded--;
+		wildExpansion(view);
 
 		boolean hit = false;
 		int win = linesWin(view);
@@ -113,15 +132,13 @@ final class Game {
 
 		statistics.freeWinHistograms.get(state).merge(win, 1L, Long::sum);
 
-		if (state == State.FREE_SPINS_1 && expanded > 0) {
+		if (state == State.FREE_SPINS_1 && bonus.contains(State.FREE_SPINS_2)) {
 			state = State.FREE_SPINS_2;
-			hit |= singleFreeSpin(view, expanded);
-		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			hit |= singleFreeSpin(view);
+		} else if (state == State.FREE_SPINS_2 && bonus.contains(State.FREE_SPINS_3)) {
 			state = State.FREE_SPINS_3;
-			hit |= singleFreeSpin(view, expanded);
-		} else if (state == State.FREE_SPINS_3 && expanded > 0) {
-			model.valid = false;
-		} else {
+			hit |= singleFreeSpin(view);
+		} else if (state == State.FREE_SPINS_3) {
 			state = State.BASE_GAME;
 		}
 
@@ -129,11 +146,13 @@ final class Game {
 	}
 
 	private void singleBaseGame(Symbol[][] view) {
+		bonus.clear();
 		state = State.BASE_GAME;
 
 		statistics.totalNumberOfBaseGames++;
+
 		spin(model.baseCumulatives, view);
-		int expanded = wildExpansion(view);
+		wildExpansion(view);
 
 		int win = linesWin(view);
 		if (win > 0) {
@@ -145,11 +164,9 @@ final class Game {
 
 		statistics.baseWinHistogram.merge(win, 1L, Long::sum);
 
-		if (expanded > 3) {
-			model.valid = false;
-		} else if (expanded > 0) {
+		if (bonus.size() > 0) {
 			state = State.FREE_SPINS_1;
-			boolean hit = singleFreeSpin(view, expanded);
+			boolean hit = singleFreeSpin(view);
 			if (win <= 0 && hit == true) {
 				statistics.hitFrequency++;
 			}
