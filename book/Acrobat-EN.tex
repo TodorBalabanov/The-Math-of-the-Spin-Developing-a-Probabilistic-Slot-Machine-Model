@@ -133,7 +133,7 @@ LIMIT OF LIABILITY/DISCLAIMER OF WARRANTY: WHILE THE PUBLISHER AND AUTHORS HAVE 
 
 The casino floor is a carefully orchestrated landscape of sound and light, but its undisputed centerpieces are the slot machines. Row upon row of brightly lit cabinets command most gaming revenue and floor space. To the casual observer, they are simple devices of luck, requiring nothing more than pressing a button and hoping for a matching combination. However, beneath their flashing screens and ringing bells lies one of the most sophisticated integrations of mathematics, computer science, and behavioral psychology ever designed.
 
-The modern slot machine bears little internal resemblance to its mechanical ancestors. In the past, spinning physical reels clicked into place, determined by tension springs and gravity. Today, the spinning symbols are nothing more than a visual facade, an elaborate theatrical performance concealing the true engine of the game: the random number generator. This microprocessor is the heart of the machine, continuously cycling through thousands of number combinations every single second, even when the cabinet sits idle.
+The modern slot machine bears little internal resemblance to its mechanical ancestors. In the past, spinning physical reels clicked into place, determined by tension springs and gravity. Today, the spinning symbols are nothing more than a visual facade, an elaborate theatrical performance concealing the true engine of the game - the random number generator. This microprocessor is the heart of the machine, continuously cycling through thousands of number combinations every single second, even when the cabinet sits idle.
 
 The exact millisecond a player presses the spin button, the computer freezes on a specific sequence of numbers. This sequence dictates the outcome before the reels on the screen even begin to move. The spinning animation that follows, prolonging the suspense and capturing the player's attention, is entirely ornamental. The game does not gradually conclude; it knows the result instantly. This technological shift means that nothing a player does, from the timing of their button press to the temperature of the machine, can influence the outcome. Each spin is a mathematically independent event, carrying no memory of the past and holding no promises for the future.
 
@@ -169,7 +169,7 @@ To achieve a specific RTP, the mathematician calculates the Expected Value for e
 
 By tweaking the virtual reel weights or adjusting the payout amounts in the PAR sheet, the mathematician balances the sum of all Expected Values until it hits the casino's exact target - for instance, an RTP of 95\% - ensuring a guaranteed 5\% house edge over time.
 
-Two slot machines can have the same 95\% RTP but feel entirely different to play. Volatility (or variance) controls this: it is the mathematical measure of how the RTP budget is distributed.
+Two slot machines can have the same 95\% RTP but feel entirely different to play. Volatility controls this - it is the mathematical measure of how the RTP budget is distributed.
 
 In Low Volatility, the mathematician designs the pay table so a large portion of the RTP comes from frequent, small wins. The player might win on 30\% of their spins (a high Hit Frequency), but the payouts are often equal to or less than their initial bet. This smooths out the statistical variance, extending the player's time on the device.
 
@@ -185,13 +185,13 @@ This book will use a well-known, successful game mechanic developed by many lead
 
 \section{General Description}
 
-The mathematical engine will be a low-volatility, high-hit-frequency profile driven by a bidirectional evaluation and a multi-state re-spin feature. The physical structure consists of a 5x3 matrix utilizing 10 fixed paylines. Wins are evaluated from both left-to-right starting on the first reel and right-to-left starting on the fifth reel. Because of this dual evaluation, any five-of-a-kind combination inherently triggers twice, meaning that paytable liability for maximum hits must account for a double payout. A top symbol mathematically valued at 250 coins for a five-of-a-kind will always cost the math model 500 coins when it lands.
+The mathematical engine will be a low-volatility (also high-hit-frequency) profile driven by a bidirectional evaluation and a multi-state re-spin feature. The physical structure consists of a 5x3 matrix utilizing 10 fixed paylines. Wins are evaluated from both left-to-right starting on the first reel and right-to-left starting on the fifth reel. Because of this dual evaluation, any five-of-a-kind combination inherently triggers twice, meaning that paytable liability for maximum hits must account for a double payout. A top symbol mathematically valued at 250 coins for a five-of-a-kind will always cost the math model 500 coins when it lands.
 
 The base game utilizes heavily stacked symbols on the virtual reel strips, typically featuring five low-tier symbols, two high-tier symbols, and one special wild. This stacking creates a highly visual experience of clustered line hits or complete dead spins while maintaining low volatility by weighting the stacks heavily toward the lowest-paying symbols. A standard base-game symbol probability matrix will be constructed alongside secondary sets for the re-spin states. The base game symbol probabilities should be explicitly weighted to make natural five-of-a-kind hits of high-tier symbols extremely rare without the intervention of the expanding wild feature.
 
 The core mathematical engine will rely on an expanding sticky wild re-spin mechanism, modeled as a progressive state machine or Markov chain. Wilds appear exclusively on the second, third, and fourth reels. In the initial base spin state, a landing wild expands to cover its entire reel, evaluates any line wins, and transitions the game to the first re-spin state. During this first re-spin, the expanded wild reel becomes locked, and the remaining four reels spin using modified reel strips that carry different symbol weights and wild landing probabilities. If no new wild lands, wins are evaluated and the state resets to the base game. If a second wild lands, it expands, pays, and triggers the second re-spin state where two center reels are now locked. Landing a third wild triggers the final state, locking all three center reels while only the first and fifth reels spin. Because the outer reels contain no wilds, the feature strictly caps at three consecutive re-spins, naturally bounding the expected value and preventing infinite mathematical loops.
 
-The game targets a theoretical return to player of roughly 96.1 percent, with a hit frequency around 22.6 percent. This profile yields a distinctly low volatility index, mathematically favoring frequent, small payouts over large multipliers. The game's absolute maximum exposure is capped at 500 times the total bet. This maximum liability occurs only when the entire screen fills with the top-tier symbol, almost exclusively during a final re-spin state where the three center reels are completely wild, and the outer reels perfectly align the highest-paying symbols.
+The game targets a theoretical return to player of roughly 96.1 percent, with a hit frequency around 22.6 percent. This profile heralds a distinctly low volatility index, mathematically favoring frequent, small payouts over large multipliers. The game's absolute maximum exposure is capped at 500 times the total bet. This maximum liability occurs only when the entire screen fills with the top-tier symbol, almost exclusively during a final re-spin state where the three center reels are completely wild, and the outer reels perfectly align the highest-paying symbols.
 
 \section{Paytable and Paylines}
 
@@ -331,15 +331,30 @@ The game initially includes an internal model representation, a statistical coll
 
 \begin{lstlisting}[language=Java, caption={Internal game states}, label=listing-005]
 enum State {
-	BASE_GAME,
-	FREE_SPINS_1,
-	FREE_SPINS_2,
-	FREE_SPINS_3,
+	BASE_GAME(0),
+	FREE_SPINS_1(1),
+	FREE_SPINS_2(2),
+	FREE_SPINS_3(3);
+
+	private final int number;
+
+	private State(int number) {
+		this.number = number;
+	}
+
+	int number() {
+		return number;
+	}
 }
 
 final class Game {
 	...
+
 	public State state = State.BASE_GAME;
+
+
+	List<State> bonus = new ArrayList<>();
+
 	...
 }
 
@@ -724,27 +739,47 @@ final class Game {
 		}
 	}
 
-	private int wildExpansion(Symbol[][] view) {
-		int expanded = 0;
+	private void wildExpansion(Symbol[][] view) {
+		int wildColumns = 0;
 		for (int i = 0; i < view.length; i++) {
 			for (int j = 0; j < view[i].length; j++) {
 				if (view[i][j] == Symbol.WILD) {
-					int substitutions = 0;
+					wildColumns++;
 					for (int k = 0; k < view[i].length; k++) 
 					{
-						if (view[i][k] != Symbol.WILD) {
-							substitutions++;
-						}
 						view[i][k] = Symbol.WILD;
-					}
-					if (substitutions > 0) {
-						expanded++;
 					}
 					break;
 				}
 			}
 		}
-		return expanded;
+		if (wildColumns > 3) {
+			model.valid = false;
+		} else if (state == State.BASE_GAME && wildColumns == 1) {
+			bonus.add(State.FREE_SPINS_1);
+		} else if (state == State.BASE_GAME && wildColumns == 2) {
+			bonus.add(State.FREE_SPINS_1);
+			bonus.add(State.FREE_SPINS_2);
+		} else if (state == State.BASE_GAME && wildColumns == 3) {
+			bonus.add(State.FREE_SPINS_1);
+			bonus.add(State.FREE_SPINS_2);
+			bonus.add(State.FREE_SPINS_3);
+		} else if (state == State.FREE_SPINS_1 && wildColumns == 2) {
+			if (bonus.contains(State.FREE_SPINS_2) == false) {
+				bonus.add(State.FREE_SPINS_2);
+			}
+		} else if (state == State.FREE_SPINS_1 && wildColumns == 3) {
+			if (bonus.contains(State.FREE_SPINS_2) == false) {
+				bonus.add(State.FREE_SPINS_2);
+			}
+			if (bonus.contains(State.FREE_SPINS_3) == false) {
+				bonus.add(State.FREE_SPINS_3);
+			}
+		} else if (state == State.FREE_SPINS_2 && wildColumns == 3) {
+			if (bonus.contains(State.FREE_SPINS_3) == false) {
+				bonus.add(State.FREE_SPINS_3);
+			}
+		}
 	}
 
 	...
@@ -799,14 +834,17 @@ final class Game {
 	...
 
 	private void singleBaseGame(Symbol[][] view) {
+		bonus.clear();
 		state = State.BASE_GAME;
 
 		statistics.totalNumberOfBaseGames++;
+
 		spin(model.baseCumulatives, view);
-		int expanded = wildExpansion(view);
+		wildExpansion(view);
 
 		int win = linesWin(view);
 		if (win > 0) {
+			statistics.hitFrequency++;
 			statistics.baseHitFrequency++;
 			statistics.baseMoney += win;
 			statistics.wonMoney += win;
@@ -814,11 +852,12 @@ final class Game {
 
 		statistics.baseWinHistogram.merge(win, 1L, Long::sum);
 
-		if (expanded > 3) {
-			model.valid = false;
-		} else if (expanded > 0) {
+		if (bonus.size() > 0) {
 			state = State.FREE_SPINS_1;
-			singleFreeSpin(view, expanded);
+			boolean hit = singleFreeSpin(view);
+			if (win <= 0 && hit == true) {
+				statistics.hitFrequency++;
+			}
 		}
 	}
 
@@ -830,20 +869,21 @@ The game state is initially set to the base game mode, and the statistic trackin
 
 The system then calculates the total win amount across all paylines. If a winning payout is determined to be greater than zero, a win event is registered by incrementing the base game hit frequency, and the calculated payout is added to both the base game money and the overall total won money statistics. The win amount is then logged in the base game win histogram, where the occurrence count for that specific payout value is updated.
 
-Finally, the system evaluates the total count of expanded wild columns. If the number of expanded columns exceeds three, the mathematical model is flagged as invalid. Alternatively, if the expansion count is greater than zero but does not exceed three, the game state is transitioned to the first free spins mode, and a single free spin is initiated using the current symbol grid and the recorded expansion count.
+Finally, the system evaluates the total count of expanded wild columns. If the expansion count is greater than zero but does not exceed three, the game state is transitioned to the first free spins mode, and a single free spin is initiated using the current symbol grid and the recorded expansion count.
 
 \begin{lstlisting}[language=Java, caption={Single free spin}, label=listing-017]
 final class Game {
 	...
 
-	private void singleFreeSpin(Symbol[][] view, int expanded) {
+	private boolean singleFreeSpin(Symbol[][] view) {
 		statistics.totalNumberOfFreeGames.merge(state, 1L, Long::sum);
 		spin(model.cumulatives.get(state), view);
-		expanded += wildExpansion(view);
-		expanded--;
+		wildExpansion(view);
 
+		boolean hit = false;
 		int win = linesWin(view);
 		if (win > 0) {
+			hit = true;
 			statistics.freeHitFrequency.merge(state, 1L, Long::sum);
 			statistics.freeMoney.merge(state, (long) win, Long::sum);
 			statistics.wonMoney += win;
@@ -852,17 +892,19 @@ final class Game {
 		statistics.freeWinHistograms.get(state).merge(win, 1L, 
 		Long::sum);
 
-		if (state == State.FREE_SPINS_1 && expanded > 0) {
+		if (state == State.FREE_SPINS_1 && bonus.contains(State.
+		FREE_SPINS_2)) {
 			state = State.FREE_SPINS_2;
-			singleFreeSpin(view, expanded);
-		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			hit |= singleFreeSpin(view);
+		} else if (state == State.FREE_SPINS_2 && bonus.contains(State.
+		FREE_SPINS_3)) {
 			state = State.FREE_SPINS_3;
-			singleFreeSpin(view, expanded);
-		} else if (state == State.FREE_SPINS_3 && expanded > 0) {
-			model.valid = false;
-		} else {
+			hit |= singleFreeSpin(view);
+		} else if (state == State.FREE_SPINS_3) {
 			state = State.BASE_GAME;
 		}
+
+		return hit;
 	}
 
 	...
@@ -873,7 +915,7 @@ The statistic tracking the total number of free games for the current game state
 
 The system then calculates the total win amount across all paylines. If the winning payout is greater than zero, a win event is registered. The free game hit frequency for the specific game state is incremented, and the calculated payout is added to both the free game money for that state and the overall total won money statistic. The win amount is then logged in the state-specific free win histogram, where the occurrence count for that exact payout value is updated.
 
-Finally, the current game state and the remaining expanded count are evaluated to determine the subsequent game phase. If the current state is the first free spins mode and the expanded count is greater than zero, the game state is transitioned to the second free spins mode, and another free spin is initiated. Similarly, if the state is already the second free spins mode and the expanded count remains greater than zero, the state is advanced to the third free spins mode, triggering another free spin. If the state is the third free spins mode and the expanded count is still greater than zero, the mathematical model is flagged as invalid. If no further expansions remain to trigger additional free spins, the game state is reverted entirely to the base game mode.
+Finally, the system manages progression between sequential free spin tiers. Initially, the active game state is evaluated. If the first free spin tier is detected as the active state and the conditions for the second tier are contained within the bonus parameters, the game state is advanced to the second tier. After this transition, the game executes a single free spin for the current reel view, and the resulting hit outcome is accumulated. Alternatively, if the second free spin tier is identified as the active state and the third tier is present within the bonus parameters, the state is progressed to the third tier. The game then executes another single free spin, and the hit status is updated similarly. Finally, if the active state is the third free spin tier, the bonus sequence ends, and the game state reverts to the standard base game.
 
 \chapter{Optimizing the Model}
 
@@ -943,7 +985,7 @@ final class Statistics {
 final class Game {
 	...
 
-	private boolean singleFreeSpin(Symbol[][] view, int expanded) {
+	private boolean singleFreeSpin(Symbol[][] view) {
 		...
 
 
@@ -959,14 +1001,14 @@ final class Game {
 
 		...
 
-		if (state == State.FREE_SPINS_1 && expanded > 0) {
+		if (state == State.FREE_SPINS_1) {
 			...
 
-			hit |= singleFreeSpin(view, expanded);
-		} else if (state == State.FREE_SPINS_2 && expanded > 0) {
+			hit |= singleFreeSpin(view);
+		} else if (state == State.FREE_SPINS_2) {
 			...
 
-				hit |= singleFreeSpin(view, expanded);
+				hit |= singleFreeSpin(view);
 		}
 
 		...
@@ -990,7 +1032,7 @@ final class Game {
 		else if (expanded > 0) {
 			...
 
-			boolean hit = singleFreeSpin(view, expanded);
+			boolean hit = singleFreeSpin(view);
 			if (win <= 0 && hit == true) {
 				statistics.hitFrequency++;
 			}
@@ -1261,7 +1303,7 @@ The graph illustrates the convergence of the optimization process, plotting the 
 
 On the first reel, designated as reel zero, the wild symbol is excluded, while symbol six is the most frequent at about 28.5\%. The second reel, reel one, shows a fairly balanced distribution, with symbol five generated most often at roughly 20.2\%, and a minor wild symbol presence of slightly over one percent. The third reel, reel two, is heavily weighted toward symbol two, which has a dominant probability of over thirty-three percent. In comparison, the Wild symbol probability drops to a negligible 0.1\%. On the fourth reel (reel three), symbol four is prioritized at 20.4\%, and Wild symbol generation is similarly minimized to about 0.2\%. Finally, on the fifth reel (reel four), the Wild symbol is again removed from the mathematical configuration.
 
-In contrast, symbols three, four, and six are distributed with nearly equal high frequencies around 21\%. Across the entire reel matrix, the optimization algorithm heavily restricts winning combinations linked to the Wild symbol. In contrast, specific standard symbols are distinctly favored on individual reels to achieve the targeted game volatility and mathematical return metrics. The probability matrix most strongly influences the distribution of base game prizes (Figure \ref{image-003}).
+In contrast, symbols three, four, and six are distributed with nearly equal high frequencies around 21\%. Across the entire reel matrix, the optimization algorithm heavily restricts winning combinations linked to the Wild symbol. In contrast, specific standard symbols are distinctly favored on individual reels to achieve the targeted game hit frequency and mathematical return metrics. The probability matrix most strongly influences the distribution of base game prizes (Figure \ref{image-003}).
 
 \begin{figure}[htbp]
   \centering
@@ -1329,11 +1371,11 @@ The authors are a team primarily affiliated with the Institute of Information an
 
 \begin{thebibliography}{99}
 \thispagestyle{empty}
-\bibitem{Balabanov-2014} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machines RTP Optimization with Genetic Algorithms, Proceedings of the International Conference on Numerical Methods and Applications, vol. 8962, 55-61, 2014, ISBN 978-3-319-15584-5
-\bibitem{Balabanov-2015} Balabanov, T., Zankinski. I.., Shumanov, B.: Slot Machine RTP Optimization and Symbols Wins Equalization with Discrete Differential Evolution, Proceedings of the International Conference on Large-Scale Scientific Computing, vol. 9374, 210–217, 2015, ISBN 978-3-319-26519-3
+\bibitem{Balabanov-2014} Balabanov, T., Zankinski. I., Shumanov, B.: Slot Machines RTP Optimization with Genetic Algorithms, Proceedings of the International Conference on Numerical Methods and Applications, vol. 8962, 55-61, 2014, ISBN 978-3-319-15584-5
+\bibitem{Balabanov-2015} Balabanov, T., Zankinski. I., Shumanov, B.: Slot Machine RTP Optimization and Symbols Wins Equalization with Discrete Differential Evolution, Proceedings of the International Conference on Large-Scale Scientific Computing, vol. 9374, 210–217, 2015, ISBN 978-3-319-26519-3
 \bibitem{Keremedchiev-2017} Keremedchiev, D., Tomov, P., Barova, M.: Slot Machine Base Game Evolutionary RTP Optimization, Proceedings of the International Conference on Numerical Analysis and Its Applications, vol. 10187, 406-413, 2017, ISBN 978-3-319-57098-3
 \bibitem{Tomov-2017a} Tomov, P., Zankinski. I., Balabanov, T.: Slot Machine Reels Reconstruction with Genetic Algorithms, Abstracts of the 12th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 102-103, 2017, ISSN 1313-3357
-\bibitem{Tomov-2017b} Tomov, P., Zankinski. I.., Balabanov, T.: Slot Machine Reels Reconstruction with Monte-Carlo Search, Proceedings of the International Scientific Conference UNITECH, vol. 2, 384-387, 2017, ISSN 1313-230X
+\bibitem{Tomov-2017b} Tomov, P., Zankinski. I., Balabanov, T.: Slot Machine Reels Reconstruction with Monte-Carlo Search, Proceedings of the International Scientific Conference UNITECH, vol. 2, 384-387, 2017, ISSN 1313-230X
 \bibitem{Petrov-2020} Petrov, P., Kostadinov, G., Zhivkov, P., Velichkova, V., Balabanov, T.: Approximate Sequencing of Virtual Reels with Genetic Algorithms, Proceedings of the 23rd International Conference on Distributed Computer and Communication Networks: Control, Computation, Communications, 507-514, 2020, ISBN 978-5-91450-248-2
 \bibitem{Parvanov-2021} Parvanov, D., Mateeva, G., Balabanov, T.: Classification of Images for Reverse Engineering of Slot Machines, Abstracts of the 16th Annual Meeting of the Bulgarian Section of SIAM, Fastumprint, 36-37, 2021, ISSN 1313-3357
 \bibitem{Balabanov-2021a} Balabanov, T.: Volatility Index Estimation by Reverse Engineering, Proceedings of the International Scientific Conference UNITECH, vol. 1, 229-234, 2021, ISSN 1313-230X

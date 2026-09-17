@@ -1,7 +1,5 @@
-import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Random;
 
 import io.jenetics.DoubleChromosome;
 import io.jenetics.DoubleGene;
@@ -17,8 +15,6 @@ import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 
 public final class Main {
-    static final Random PRNG = new SecureRandom();
-
     static final int POPULATION_SIZE = 53;
 
     static final int NUMBER_OF_GENERATIONS = 300;
@@ -34,6 +30,7 @@ public final class Main {
             probabilities.set(i, chromosome.get(i).doubleValue());
         }
 
+        game.statistics.numberOfBaseGameSpins = 1_000_000;
         game.probabilities(probabilities);
         game.simulate();
 

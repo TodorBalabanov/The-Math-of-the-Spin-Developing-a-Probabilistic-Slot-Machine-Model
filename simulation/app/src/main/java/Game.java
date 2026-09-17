@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Random;
 
 final class Game {
-	private static final Random PRNG = new SecureRandom();
+	private final Random PRNG = new SecureRandom();
 
 	static final double RTP_TARGET = 0.961;
 
