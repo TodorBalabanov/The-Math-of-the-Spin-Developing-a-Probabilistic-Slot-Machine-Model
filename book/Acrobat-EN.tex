@@ -588,7 +588,8 @@ Using direct probabilities in gameplay is inefficient. It is better to calculate
 final class Model {
 	...
 
-	Map<Integer, Map<Symbol, Double>> baseCumulatives = new LinkedHashMap<>();
+	Map<Integer, Map<Symbol, Double>> baseCumulatives = new LinkedHashMap<>
+	();
 
 	Map<Integer, Map<Symbol, Double>> free1Cumulatives = baseCumulatives;
 
@@ -1047,7 +1048,7 @@ final class Game {
 		double hitFrequency = (double) statistics.hitFrequency / 
 		(double) statistics.numberOfBaseGameSpins;
 
-		return Math.sqrt(10000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
+		return Math.sqrt(100000 * (rtp - RTP_TARGET) * (rtp - RTP_TARGET)
 				+ 10000 * (hitFrequency - HIT_FREQUENCY_TARGET) * 
 				(hitFrequency - HIT_FREQUENCY_TARGET));
 	}
@@ -1187,7 +1188,8 @@ public final class Main {
     public static void main(String[] args) {
 		...
 
-        Engine<DoubleGene, Double> engine = Engine.builder(Main::evaluation, factory)
+        Engine<DoubleGene, Double> engine = Engine.builder(Main::evaluation, 
+        factory)
                 .populationSize(POPULATION_SIZE)
                 .optimize(Optimize.MINIMUM)
                 .survivorsFraction(0.05)
@@ -1349,7 +1351,7 @@ The mathematical performance of the deepest bonus tiers ultimately confirms a de
 
 The modern casino relies entirely on the invisible architecture of applied mathematics and computational probability. This book has shown that moving from traditional virtual reel strips to a direct symbol probability matrix offers a flexible, modern approach to slot machine design. By detaching the mathematical engine from the legacy constraints of fixed reel lengths, designers can directly manipulate the foundational variables that dictate both the casino's liability and the player's experience.
 
-Our simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1\% Return to Player and a 22.6\% hit frequency, the evolutionary engine successfully navigated a high-dimensional continuous search space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
+The simulations showed that metaheuristic optimization - specifically Genetic Algorithms - is a highly effective method for tuning complex slot games. By defining strict target metrics, such as a 96.1\% Return to Player and a 22.6\% hit frequency, the evolutionary engine successfully navigated a high-dimensional continuous search space. Utilizing the Jenetics library, the fitness evaluation dropped to near-zero within minutes, yielding a highly optimized probability matrix. The algorithm successfully weighted standard symbols to maintain baseline payouts while aggressively restricting the expanding Wild symbol to manage the game's economy.
 
 The interpreted data reveals that optimizing a single probability matrix across all game states naturally engineered a high-risk, high-reward mathematical profile. The optimized model relies heavily on a massive concentration of zero-value spins and clustered, low-tier payouts during standard play. The multi-state expanding wild re-spin feature is statistically rare, with the tertiary free spin stage being exceptionally difficult to reach. When players do reach the deepest bonus levels, they are mathematically guaranteed substantial returns, which offset the long periods of base-game attrition.
 
