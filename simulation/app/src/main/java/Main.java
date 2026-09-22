@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import io.jenetics.DoubleChromosome;
 import io.jenetics.DoubleGene;
@@ -20,9 +21,9 @@ import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 
 public final class Main {
-    private static final int POPULATION_SIZE = 53;
+    private static final int POPULATION_SIZE = 113;
 
-    private static final int NUMBER_OF_GENERATIONS = 300;
+    private static final int NUMBER_OF_GENERATIONS = 10;
 
     private static final double STOP_THRESHOLD = 0.01D;
 
@@ -68,11 +69,13 @@ public final class Main {
         Engine<DoubleGene, Double> engine = Engine.builder(Main::evaluation, factory)
                 .populationSize(POPULATION_SIZE)
                 .optimize(Optimize.MINIMUM)
-                .survivorsFraction(0.05)
+                .survivorsFraction(Math.clamp(ThreadLocalRandom.current().nextGaussian() * 0.05 + 0.05, 0.0, 1.0))
                 .survivorsSelector(new EliteSelector<>())
                 .alterers(
-                        new UniformCrossover<>(0.5),
-                        new Mutator<>(0.05))
+                        new UniformCrossover<>(
+                                Math.clamp(ThreadLocalRandom.current().nextGaussian() * 0.2 + 0.8, 0.0, 1.0),
+                                Math.clamp(ThreadLocalRandom.current().nextGaussian() * 0.1 + 0.5, 0.0, 1.0)),
+                        new Mutator<>(Math.clamp(ThreadLocalRandom.current().nextGaussian() * 0.05 + 0.25, 0.0, 1.0)))
                 .build();
 
         EvolutionStream<DoubleGene, Double> stream = null;
