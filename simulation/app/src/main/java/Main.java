@@ -1,3 +1,7 @@
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -11,15 +15,20 @@ import io.jenetics.UniformCrossover;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
 import io.jenetics.engine.EvolutionStatistics;
+import io.jenetics.engine.EvolutionStream;
 import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 
 public final class Main {
-    static final int POPULATION_SIZE = 53;
+    private static final int POPULATION_SIZE = 53;
 
-    static final int NUMBER_OF_GENERATIONS = 300;
+    private static final int NUMBER_OF_GENERATIONS = 300;
 
-    static final double STOP_THRESHOLD = 0.01D;
+    private static final double STOP_THRESHOLD = 0.01D;
+
+    private static final String INTERMEDIATE_FILE = "intermediate.bin";
+
+    private static double bestFitness = Double.MAX_VALUE;
 
     private static double evaluation(Genotype<DoubleGene> genotype) {
         Game game = new Game();
@@ -30,7 +39,15 @@ public final class Main {
             probabilities.set(i, chromosome.get(i).doubleValue());
         }
 
-        game.statistics.numberOfBaseGameSpins = 1_000_000;
+        if (bestFitness > 10) {
+            game.statistics.numberOfBaseGameSpins = 1_000;
+        } else if (bestFitness > 1) {
+            game.statistics.numberOfBaseGameSpins = 10_000;
+        } else if (bestFitness > 0.1) {
+            game.statistics.numberOfBaseGameSpins = 100_000;
+        } else {
+            game.statistics.numberOfBaseGameSpins = 1_000_000;
+        }
         game.probabilities(probabilities);
         game.simulate();
 
@@ -58,12 +75,24 @@ public final class Main {
                         new Mutator<>(0.05))
                 .build();
 
+        EvolutionStream<DoubleGene, Double> stream = null;
+        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(Path.of(INTERMEDIATE_FILE)))) {
+            stream = engine.stream((EvolutionResult<DoubleGene, Double>) in.readObject());
+        } catch (Exception e) {
+            stream = engine.stream();
+        }
+
         final EvolutionStatistics<Double, ?> statistics = EvolutionStatistics.ofNumber();
-        Genotype<DoubleGene> result = engine.stream().limit(Limits.byFitnessThreshold(STOP_THRESHOLD))
-                .limit(NUMBER_OF_GENERATIONS).peek(intermediate -> {
+        Genotype<DoubleGene> result = stream.limit(Limits.byFitnessThreshold(STOP_THRESHOLD))
+                .limit(Limits.byFixedGeneration(NUMBER_OF_GENERATIONS)).peek(intermediate -> {
+                    try (ObjectOutputStream out = new ObjectOutputStream(
+                            Files.newOutputStream(Path.of(INTERMEDIATE_FILE)))) {
+                        out.writeObject(intermediate);
+                    } catch (Exception e) {
+                    }
                     System.out.println(LocalTime.now() + "\t" +
                             intermediate.generation() + "\t" +
-                            intermediate.bestFitness());
+                            (bestFitness = intermediate.bestFitness()));
                 }).peek(statistics).collect(EvolutionResult.toBestGenotype());
 
         DoubleChromosome chromosome = result.chromosome().as(DoubleChromosome.class);
