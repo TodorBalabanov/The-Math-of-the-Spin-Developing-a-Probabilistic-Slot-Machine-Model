@@ -23,7 +23,7 @@ import io.jenetics.util.Factory;
 public final class Main {
     private static final int POPULATION_SIZE = 113;
 
-    private static final int NUMBER_OF_GENERATIONS = 10;
+    private static final int NUMBER_OF_GENERATIONS = 100;
 
     private static final double STOP_THRESHOLD = 0.01D;
 
@@ -103,6 +103,7 @@ public final class Main {
             probabilities.set(i, chromosome.get(i).doubleValue());
         }
         game.probabilities(probabilities);
+        game.statistics.numberOfBaseGameSpins = 100_000_000;
         game.simulate();
 
         System.out.println(statistics);
